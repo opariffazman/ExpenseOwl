@@ -15,7 +15,7 @@
             }
         })();
     </script>
-    <title data-i18n="table.title">ExpenseOwl Table</title>
+    <title>ExpenseOwl Table</title>
 </head>
 <body>
     <div class="container">
@@ -24,10 +24,10 @@
                 <a href="/">
                     <img src="/pwa/icon-192.png" alt="ExpenseOwl Logo" height="85" style="vertical-align: middle; margin-right: 20px;">
                 </a>
-                <a href="/" class="view-button" data-tooltip="Dashboard" data-i18n="navigation.dashboard" data-i18n-attr="data-tooltip">
+                <a href="/" class="view-button" data-tooltip="Dashboard">
                     <i class="fa-solid fa-chart-pie"></i>
                 </a>
-                <a href="/table" class="view-button active" data-tooltip="Table View" data-i18n="navigation.table_view" data-i18n-attr="data-tooltip">
+                <a href="/table" class="view-button active" data-tooltip="Table View">
                     <i class="fa-solid fa-table"></i>
                 </a>
                 {{if not .HideSettings}}
@@ -46,40 +46,40 @@
         
         <div class="table-controls">
             <label for="showAllToggle">
-                <input type="checkbox" id="showAllToggle" class="styled-checkbox"> <span data-i18n="table.show_all">Show All Transactions</span>
+                <input type="checkbox" id="showAllToggle" class="styled-checkbox"> Show All Transactions
             </label>
         </div>
 
         <div class="form-container">
             <form id="expenseForm" class="expense-form">
                 <div class="form-group">
-                    <label for="name" data-i18n="common.name">Name</label>
+                    <label for="name">Name</label>
                     <input type="text" id="name" value="-" required>
                 </div>
-
+                
                 <div class="form-group">
-                    <label for="category" data-i18n="common.category">Category</label>
+                    <label for="category">Category</label>
                     <select id="category" required>
-                        <option value="" data-i18n="common.categories">categories</option>
+                        <option value="">categories</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="tags-input" data-i18n="common.tags">Tags</label>
+                    <label for="tags-input">Tags</label>
                     <div id="tags-input-container" class="tags-input-container">
                         <div id="selected-tags" class="selected-tags"></div>
-                        <input type="text" id="tags-input" placeholder="(optional)" data-i18n="form.tags_placeholder" data-i18n-attr="placeholder">
+                        <input type="text" id="tags-input" placeholder="(optional)">
                     </div>
                     <div id="tags-dropdown" class="tags-dropdown"></div>
                 </div>
-
+                
                 <div class="form-group">
-                    <label for="amount" data-i18n="common.amount">Amount</label>
+                    <label for="amount">Amount</label>
                     <input type="number" id="amount" step="0.01" min="0.01" max="9000000000000000" required>
                 </div>
-
+                
                 <div class="form-group">
-                    <label for="date" data-i18n="common.date">Date</label>
+                    <label for="date">Date</label>
                     <input type="date" id="date" required>
                     <script>
                         const today = new Date();
@@ -92,11 +92,11 @@
                 </div>
                 
                 <div class="form-group form-group-checkbox">
-                    <label for="reportGain" data-i18n="dashboard.report_gain">Report Gain</label>
+                    <label for="reportGain">Report Gain</label>
                     <input type="checkbox" id="reportGain" class="styled-checkbox">
                 </div>
 
-                <button type="submit" class="nav-button" data-i18n="table.add_expense">Add Expense</button>
+                <button type="submit" class="nav-button">Add Expense</button>
             </form>
             <div id="formMessage" class="form-message"></div>
         </div>
@@ -107,16 +107,15 @@
 
     <div id="deleteModal" class="modal">
         <div class="modal-content">
-            <h3 data-i18n="modal.delete_expense">Delete Expense</h3>
-            <p data-i18n="modal.delete_confirm">Are you sure you want to delete this expense? (cannot be undone)</p>
+            <h3>Delete Expense</h3>
+            <p>Are you sure you want to delete this expense? (cannot be undone)</p>
             <div class="modal-buttons">
-                <button class="modal-button" onclick="closeDeleteModal()" data-i18n="common.cancel">Cancel</button>
-                <button class="modal-button confirm" onclick="confirmDelete()" data-i18n="common.delete">Delete</button>
+                <button class="modal-button" onclick="closeDeleteModal()">Cancel</button>
+                <button class="modal-button confirm" onclick="confirmDelete()">Delete</button>
             </div>
         </div>
     </div>
 
-    <script src="/i18n.js"></script>
     <script src="/functions.js"></script>
     <script>
         let currentCurrency = 'usd';
@@ -129,9 +128,9 @@
 
         function createTable(expenses) {
             if (!expenses || expenses.length === 0) {
-                const message = document.getElementById('showAllToggle').checked ?
-                                (typeof i18n !== 'undefined' ? i18n.t('table.no_transactions') : 'No transactions found') :
-                                (typeof i18n !== 'undefined' ? i18n.t('table.no_expenses_month') : 'No expenses recorded for this month');
+                const message = document.getElementById('showAllToggle').checked ? 
+                                'No transactions found' : 
+                                'No expenses recorded for this month';
                 return `<div class="no-data">${message}</div>`;
             }
             const hasTags = expenses.some(exp => exp.tags && exp.tags.length > 0);
@@ -139,11 +138,11 @@
                 <table class="expense-table">
                     <thead>
                         <tr>
-                            <th>${typeof i18n !== 'undefined' ? i18n.t('common.name') : 'Name'}</th>
-                            <th>${typeof i18n !== 'undefined' ? i18n.t('common.category') : 'Category'}</th>
-                            ${hasTags ? `<th class="tags-column">${typeof i18n !== 'undefined' ? i18n.t('common.tags') : 'Tags'}</th>` : ''}
-                            <th>${typeof i18n !== 'undefined' ? i18n.t('common.amount') : 'Amount'}</th>
-                            <th class="date-header">${typeof i18n !== 'undefined' ? i18n.t('common.date') : 'Date'}</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            ${hasTags ? '<th class="tags-column">Tags</th>' : ''}
+                            <th>Amount</th>
+                            <th class="date-header">Date</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -227,8 +226,8 @@
             const form = document.getElementById('expenseForm');
             form.dataset.editId = id;
             const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.textContent = typeof i18n !== 'undefined' ? i18n.t('table.update_expense') : 'Update Expense';
-
+            submitButton.textContent = 'Update Expense';
+            
             form.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -269,7 +268,7 @@
                 
                 if(value && ![...allTags].map(t => t.toLowerCase()).includes(value)) {
                     const newItem = document.createElement('div');
-                    newItem.textContent = typeof i18n !== 'undefined' ? i18n.t('tags_create', { tag: input.value.trim() }) : `+ Create "${input.value.trim()}"`;
+                    newItem.textContent = `+ Create "${input.value.trim()}"`;
                     newItem.className = 'new-tag';
                     newItem.onclick = () => addTag(input.value.trim());
                     dropdown.appendChild(newItem);
@@ -423,15 +422,13 @@
                 });
                 const messageDiv = document.getElementById('formMessage');
                 if (response.ok) {
-                    messageDiv.textContent = editId ?
-                        (typeof i18n !== 'undefined' ? i18n.t('form.expense_updated') : 'Expense updated successfully!') :
-                        (typeof i18n !== 'undefined' ? i18n.t('form.expense_added') : 'Expense added successfully!');
+                    messageDiv.textContent = editId ? 'Expense updated successfully!' : 'Expense added successfully!';
                     messageDiv.className = 'form-message success';
                     form.reset();
                     document.getElementById('selected-tags').innerHTML = '';
                     selectedTags.clear();
                     delete form.dataset.editId;
-                    form.querySelector('button[type="submit"]').textContent = typeof i18n !== 'undefined' ? i18n.t('table.add_expense') : 'Add Expense';
+                    form.querySelector('button[type="submit"]').textContent = 'Add Expense';
                     await initialize();
                     const today = new Date();
                     const year = today.getFullYear();
@@ -440,7 +437,7 @@
                     document.getElementById('date').value = `${year}-${month}-${day}`;
                 } else {
                     const error = await response.json();
-                    messageDiv.textContent = typeof i18n !== 'undefined' ? `${i18n.t('form.error_update')}: ${error.error || ''}` : `Error: ${error.error || 'Failed to save expense'}`;
+                    messageDiv.textContent = `Error: ${error.error || 'Failed to save expense'}`;
                     messageDiv.className = 'form-message error';
                 }
                 setTimeout(() => {
@@ -450,14 +447,11 @@
             } catch (error) {
                 console.error('Error saving expense:', error);
                 const messageDiv = document.getElementById('formMessage');
-                messageDiv.textContent = typeof i18n !== 'undefined' ? i18n.t('form.error_update') : 'Error: Failed to save expense';
+                messageDiv.textContent = 'Error: Failed to save expense';
                 messageDiv.className = 'form-message error';
             }
         });
-        document.addEventListener('DOMContentLoaded', async () => {
-            await i18n.init();
-            await initialize();
-        });
+        document.addEventListener('DOMContentLoaded', initialize);
 
         document.getElementById('name').addEventListener('click', (e) => {
             if (e.target.value === '-') {
