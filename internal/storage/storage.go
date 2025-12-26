@@ -58,10 +58,11 @@ type Config struct {
 
 type RecurringExpense struct {
 	ID          string    `json:"id"`
-	Name        string    `json:"name"`
+	Description string    `json:"description"`
 	Amount      float64   `json:"amount"`
 	Currency    string    `json:"currency"`
-	Tags        []string  `json:"tags"`
+	From        string    `json:"from"`
+	To          string    `json:"to"`
 	Category    string    `json:"category"`
 	StartDate   time.Time `json:"startDate"`   // date of the first occurrence
 	Interval    string    `json:"interval"`    // daily, weekly, monthly, yearly
@@ -88,8 +89,9 @@ type SystemConfig struct {
 type Expense struct {
 	ID          string    `json:"id"`
 	RecurringID string    `json:"recurringID"`
-	Name        string    `json:"name"`
-	Tags        []string  `json:"tags"`
+	Description string    `json:"description"`
+	From        string    `json:"from"`
+	To          string    `json:"to"`
 	Category    string    `json:"category"`
 	Amount      float64   `json:"amount"`
 	Currency    string    `json:"currency"`
@@ -172,10 +174,12 @@ func ValidateCategory(category string) (string, error) {
 }
 
 func (e *Expense) Validate() error {
-	e.Name = SanitizeString(e.Name)
-	if e.Name == "" {
-		return fmt.Errorf("expense 'name' cannot be empty")
+	e.Description = SanitizeString(e.Description)
+	if e.Description == "" {
+		return fmt.Errorf("expense 'description' cannot be empty")
 	}
+	e.From = SanitizeString(e.From)
+	e.To = SanitizeString(e.To)
 	if e.Category == "" {
 		return fmt.Errorf("expense 'category' cannot be empty")
 	}
@@ -185,16 +189,6 @@ func (e *Expense) Validate() error {
 	// if e.Currency == "" {
 	// 	return fmt.Errorf("expense 'currency' cannot be empty")
 	// }
-	if len(e.Tags) > 0 {
-		var cleanedTags []string
-		for _, tag := range e.Tags {
-			sanitizedTag := SanitizeString(tag)
-			if sanitizedTag != "" {
-				cleanedTags = append(cleanedTags, sanitizedTag)
-			}
-		}
-		e.Tags = cleanedTags
-	}
 	if e.Date.IsZero() {
 		return fmt.Errorf("expense 'date' cannot be empty")
 	}
@@ -202,22 +196,14 @@ func (e *Expense) Validate() error {
 }
 
 func (e *RecurringExpense) Validate() error {
-	e.Name = SanitizeString(e.Name)
-	if e.Name == "" {
-		return fmt.Errorf("recurring expense 'name' cannot be empty")
+	e.Description = SanitizeString(e.Description)
+	if e.Description == "" {
+		return fmt.Errorf("recurring expense 'description' cannot be empty")
 	}
+	e.From = SanitizeString(e.From)
+	e.To = SanitizeString(e.To)
 	if e.Category == "" {
 		return fmt.Errorf("recurring expense 'category' cannot be empty")
-	}
-	if len(e.Tags) > 0 {
-		var cleanedTags []string
-		for _, tag := range e.Tags {
-			sanitizedTag := SanitizeString(tag)
-			if sanitizedTag != "" {
-				cleanedTags = append(cleanedTags, sanitizedTag)
-			}
-		}
-		e.Tags = cleanedTags
 	}
 	if e.Occurrences < 2 {
 		return fmt.Errorf("at least 2 occurences required to recur")

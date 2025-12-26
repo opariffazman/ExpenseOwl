@@ -41,12 +41,13 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	for _, expense := range expenses {
 		record := []string{
 			expense.ID,
-			expense.Name,
+			expense.Description,
+			expense.From,
+			expense.To,
 			expense.Category,
 			// expense.Currency,
 			strconv.FormatFloat(expense.Amount, 'f', 2, 64),
 			expense.Date.Format(time.RFC3339),
-			strings.Join(expense.Tags, ","),
 		}
 		if err := writer.Write(record); err != nil {
 			log.Printf("API ERROR: Failed to write CSV record for expense ID %s: %v\n", expense.ID, err)
@@ -178,12 +179,11 @@ func (h *Handler) ImportCSV(w http.ResponseWriter, r *http.Request) {
 		}
 
 		expense := storage.Expense{
-			Name:     strings.TrimSpace(record[colMap["name"]]),
-			Category: category,
-			Amount:   amount,
-			Currency: localCurrency,
-			Date:     date,
-			Tags:     tags,
+			Description: strings.TrimSpace(record[colMap["name"]]),
+			Category:    category,
+			Amount:      amount,
+			Currency:    localCurrency,
+			Date:        date,
 		}
 		if err := expense.Validate(); err != nil {
 			log.Printf("Warning: Skipping row %d due to validation error: %v\n", i+2, err)
@@ -297,10 +297,10 @@ func (h *Handler) ImportOldCSV(w http.ResponseWriter, r *http.Request) {
 			amountUpdated = amount * -1
 		}
 		expense := storage.Expense{
-			Name:     strings.TrimSpace(record[colMap["name"]]),
-			Category: category,
-			Amount:   amountUpdated,
-			Date:     date,
+			Description: strings.TrimSpace(record[colMap["name"]]),
+			Category:    category,
+			Amount:      amountUpdated,
+			Date:        date,
 		}
 		if err := expense.Validate(); err != nil {
 			log.Printf("Warning: Skipping row %d due to validation error: %v\n", i+2, err)

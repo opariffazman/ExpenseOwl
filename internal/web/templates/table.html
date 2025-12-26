@@ -57,8 +57,18 @@
             </div>
             <form id="expenseForm" class="expense-form">
                 <div class="form-group">
-                    <label for="name" data-i18n="common.name">Name</label>
-                    <input type="text" id="name" value="-" required>
+                    <label for="description" data-i18n="common.description">Description</label>
+                    <input type="text" id="description" value="-" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="from" data-i18n="common.from">From</label>
+                    <input type="text" id="from">
+                </div>
+
+                <div class="form-group">
+                    <label for="to" data-i18n="common.to">To</label>
+                    <input type="text" id="to">
                 </div>
 
                 <div class="form-group">
@@ -66,15 +76,6 @@
                     <select id="category" required>
                         <option value="" data-i18n="common.categories">categories</option>
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="tags-input" data-i18n="common.tags">Tags</label>
-                    <div id="tags-input-container" class="tags-input-container">
-                        <div id="selected-tags" class="selected-tags"></div>
-                        <input type="text" id="tags-input" data-i18n-placeholder="form.tags_placeholder" placeholder="(optional)">
-                    </div>
-                    <div id="tags-dropdown" class="tags-dropdown"></div>
                 </div>
 
                 <div class="form-group">
@@ -122,8 +123,6 @@
         let allExpenses = [];
         let expensesForTable = [];
         let startDate = 1;
-        let allTags = new Set();
-        let selectedTags = new Set();
         let isAddingGain = false;
 
         function setFormMode(isGain, isEditing = false) {
@@ -159,14 +158,14 @@
                                 t('table.no_expenses_month', 'No expenses recorded for this month');
                 return `<div class="no-data">${message}</div>`;
             }
-            const hasTags = expenses.some(exp => exp.tags && exp.tags.length > 0);
             return `
                 <table class="expense-table">
                     <thead>
                         <tr>
-                            <th>${t('common.name', 'Name')}</th>
+                            <th>${t('common.description', 'Description')}</th>
+                            <th>${t('common.from', 'From')}</th>
+                            <th>${t('common.to', 'To')}</th>
                             <th>${t('common.category', 'Category')}</th>
-                            ${hasTags ? `<th class="tags-column">${t('common.tags', 'Tags')}</th>` : ''}
                             <th>${t('common.amount', 'Amount')}</th>
                             <th class="date-header">${t('common.date', 'Date')}</th>
                             <th></th>
@@ -175,9 +174,10 @@
                     <tbody>
                         ${expenses.map((expense, index) => `
                             <tr>
-                                <td>${escapeHTML(expense.name)}</td>
+                                <td>${escapeHTML(expense.description || '')}</td>
+                                <td>${escapeHTML(expense.from || '')}</td>
+                                <td>${escapeHTML(expense.to || '')}</td>
                                 <td>${escapeHTML(expense.category)}</td>
-                                ${hasTags ? `<td class="tags-column">${(expense.tags || []).map(escapeHTML).join(', ')}</td>` : ''}
                                 <td class="amount">${formatCurrency(expense.amount)}</td>
                                 <td class="date-column">${formatDateFromUTC(expense.date)}</td>
                                 <td>
@@ -210,38 +210,18 @@
         function editExpenseByIndex(index) {
             const expense = expensesForTable[index];
             if (expense) {
-                editExpense(expense.id, expense.name, expense.category, expense.amount, (expense.tags || []), expense.date);
+                editExpense(expense.id, expense.description, expense.from, expense.to, expense.category, expense.amount, expense.date);
             }
         }
 
-        function renderSelectedTags(tags) {
-            const selectedContainer = document.getElementById('selected-tags');
-            selectedContainer.innerHTML = '';
-            selectedTags.clear();
-            (tags || []).forEach(tag => {
-                selectedTags.add(tag);
-                const pill = document.createElement('div');
-                pill.className = 'tag-pill';
-                pill.textContent = tag;
-                const removeBtn = document.createElement('span');
-                removeBtn.className = 'remove-tag';
-                removeBtn.textContent = '×';
-                removeBtn.onclick = () => {
-                    selectedTags.delete(tag);
-                    pill.remove();
-                };
-                pill.appendChild(removeBtn);
-                selectedContainer.appendChild(pill);
-            });
-        }
-
-        function editExpense(id, name, category, amount, tags, date) {
+        function editExpense(id, description, from, to, category, amount, date) {
             const isGain = amount > 0;
-            document.getElementById('name').value = name;
+            document.getElementById('description').value = description || '';
+            document.getElementById('from').value = from || '';
+            document.getElementById('to').value = to || '';
             document.getElementById('category').value = category;
             document.getElementById('amount').value = Math.abs(amount);
             setFormMode(isGain, true);
-            renderSelectedTags(tags);
 
             const localDate = new Date(date);
             const year = localDate.getFullYear();
@@ -253,80 +233,6 @@
             form.dataset.editId = id;
 
             form.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function setupTagInput() {
-            const container = document.getElementById('tags-input-container');
-            const input = document.getElementById('tags-input');
-            const dropdown = document.getElementById('tags-dropdown');
-            const formGroup = container.parentElement;
-
-            const addTag = (tag) => {
-                tag = tag.trim();
-                if (tag && !selectedTags.has(tag)) {
-                    selectedTags.add(tag);
-                    renderSelectedTags(Array.from(selectedTags));
-                }
-                input.value = '';
-                dropdown.style.display = 'none';
-            };
-
-            input.addEventListener('focus', () => {
-                dropdown.innerHTML = '';
-                const availableTags = [...allTags].filter(tag => !selectedTags.has(tag));
-                if (availableTags.length > 0) {
-                    availableTags.forEach(tag => {
-                        const item = document.createElement('div');
-                        item.textContent = tag;
-                        item.onclick = () => addTag(tag);
-                        dropdown.appendChild(item);
-                    });
-                    dropdown.style.display = 'block';
-                }
-            });
-
-            input.addEventListener('input', () => {
-                const value = input.value.trim().toLowerCase();
-                dropdown.innerHTML = '';
-                const filteredTags = [...allTags].filter(tag => tag.toLowerCase().includes(value) && !selectedTags.has(tag));
-                
-                if(value && ![...allTags].map(tag => tag.toLowerCase()).includes(value)) {
-                    const newItem = document.createElement('div');
-                    const createText = t('tags_create', '+ Create "{tag}"').replace('{tag}', input.value.trim());
-                    newItem.textContent = createText;
-                    newItem.className = 'new-tag';
-                    newItem.onclick = () => addTag(input.value.trim());
-                    dropdown.appendChild(newItem);
-                }
-
-                if (filteredTags.length > 0) {
-                    filteredTags.forEach(tag => {
-                        const item = document.createElement('div');
-                        item.textContent = tag;
-                        item.onclick = () => addTag(tag);
-                        dropdown.appendChild(item);
-                    });
-                }
-                
-                dropdown.style.display = 'block';
-                if (dropdown.children.length === 0) dropdown.style.display = 'none';
-            });
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (input.value.trim()) {
-                        addTag(input.value.trim());
-                    }
-                }
-            });
-
-            container.addEventListener('click', () => input.focus());
-            document.addEventListener('click', (e) => {
-                if (!formGroup.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
         }
 
         async function initialize() {
@@ -346,17 +252,9 @@
                 if (!response.ok) throw new Error('Failed to fetch data');
                 const data = await response.json();
                 allExpenses = Array.isArray(data) ? data : (data && Array.isArray(data.expenses) ? data.expenses : []);
-                
-                allTags.clear();
-                allExpenses.forEach(exp => {
-                    if (exp.tags) {
-                        exp.tags.forEach(tag => allTags.add(tag));
-                    }
-                });
 
                 updateMonthDisplay();
                 updateTable();
-                setupTagInput();
             } catch (error) {
                 console.error('Failed to initialize table:', error);
                 document.getElementById('tableContainer').innerHTML =
@@ -432,11 +330,12 @@
             }
 
             const formData = {
-                name: document.getElementById('name').value,
+                description: document.getElementById('description').value,
+                from: document.getElementById('from').value,
+                to: document.getElementById('to').value,
                 category: document.getElementById('category').value,
                 amount: amount,
-                date: getISODateWithLocalTime(document.getElementById('date').value),
-                tags: Array.from(selectedTags)
+                date: getISODateWithLocalTime(document.getElementById('date').value)
             };
             try {
                 const url = editId ? `/expense/edit?id=${editId}` : '/expense';
@@ -454,8 +353,6 @@
                     }
                     messageDiv.className = 'form-message success';
                     form.reset();
-                    document.getElementById('selected-tags').innerHTML = '';
-                    selectedTags.clear();
                     delete form.dataset.editId;
                     setFormMode(false, false);
                     await initialize();

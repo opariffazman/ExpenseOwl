@@ -24,25 +24,27 @@ const (
 	CREATE TABLE IF NOT EXISTS expenses (
 		id VARCHAR(36) PRIMARY KEY,
 		recurring_id VARCHAR(36),
-		name VARCHAR(255) NOT NULL,
+		description VARCHAR(255) NOT NULL,
+		"from" VARCHAR(255),
+		"to" VARCHAR(255),
 		category VARCHAR(255) NOT NULL,
 		amount NUMERIC(10, 2) NOT NULL,
 		currency VARCHAR(3) NOT NULL,
-		date TIMESTAMPTZ NOT NULL,
-		tags TEXT
+		date TIMESTAMPTZ NOT NULL
 	);`
 
 	createRecurringExpensesTableSQL = `
 	CREATE TABLE IF NOT EXISTS recurring_expenses (
 		id VARCHAR(36) PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
+		description VARCHAR(255) NOT NULL,
 		amount NUMERIC(10, 2) NOT NULL,
 		currency VARCHAR(3) NOT NULL,
+		"from" VARCHAR(255),
+		"to" VARCHAR(255),
 		category VARCHAR(255) NOT NULL,
 		start_date TIMESTAMPTZ NOT NULL,
 		interval VARCHAR(50) NOT NULL,
-		occurrences INTEGER NOT NULL,
-		tags TEXT
+		occurrences INTEGER NOT NULL
 	);`
 
 	createConfigTableSQL = `
@@ -226,25 +228,25 @@ func (s *databaseStore) UpdateLanguage(language string) error {
 
 func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {
 	var expense Expense
-	var tagsStr sql.NullString
-	var recurringID sql.NullString
-	err := scanner.Scan(&expense.ID, &recurringID, &expense.Name, &expense.Category, &expense.Amount, &expense.Date, &tagsStr)
+	var recurringID, fromStr, toStr sql.NullString
+	err := scanner.Scan(&expense.ID, &recurringID, &expense.Description, &fromStr, &toStr, &expense.Category, &expense.Amount, &expense.Date)
 	if err != nil {
 		return Expense{}, err
 	}
 	if recurringID.Valid {
 		expense.RecurringID = recurringID.String
 	}
-	if tagsStr.Valid && tagsStr.String != "" {
-		if err := json.Unmarshal([]byte(tagsStr.String), &expense.Tags); err != nil {
-			return Expense{}, fmt.Errorf("failed to parse tags for expense %s: %v", expense.ID, err)
-		}
+	if fromStr.Valid {
+		expense.From = fromStr.String
+	}
+	if toStr.Valid {
+		expense.To = toStr.String
 	}
 	return expense, nil
 }
 
 func (s *databaseStore) GetAllExpenses() ([]Expense, error) {
-	query := `SELECT id, recurring_id, name, category, amount, date, tags FROM expenses ORDER BY date DESC`
+	query := `SELECT id, recurring_id, description, "from", "to", category, amount, date FROM expenses ORDER BY date DESC`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query expenses: %v", err)
@@ -263,7 +265,7 @@ func (s *databaseStore) GetAllExpenses() ([]Expense, error) {
 }
 
 func (s *databaseStore) GetExpense(id string) (Expense, error) {
-	query := `SELECT id, recurring_id, name, category, amount, date, tags FROM expenses WHERE id = $1`
+	query := `SELECT id, recurring_id, description, "from", "to", category, amount, date FROM expenses WHERE id = $1`
 	expense, err := scanExpense(s.db.QueryRow(query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -284,33 +286,25 @@ func (s *databaseStore) AddExpense(expense Expense) error {
 	if expense.Date.IsZero() {
 		expense.Date = time.Now()
 	}
-	tagsJSON, err := json.Marshal(expense.Tags)
-	if err != nil {
-		return err
-	}
 	query := `
-		INSERT INTO expenses (id, recurring_id, name, category, amount, currency, date, tags)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO expenses (id, recurring_id, description, "from", "to", category, amount, currency, date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
-	_, err = s.db.Exec(query, expense.ID, expense.RecurringID, expense.Name, expense.Category, expense.Amount, expense.Currency, expense.Date, string(tagsJSON))
+	_, err := s.db.Exec(query, expense.ID, expense.RecurringID, expense.Description, expense.From, expense.To, expense.Category, expense.Amount, expense.Currency, expense.Date)
 	return err
 }
 
 func (s *databaseStore) UpdateExpense(id string, expense Expense) error {
-	tagsJSON, err := json.Marshal(expense.Tags)
-	if err != nil {
-		return err
-	}
 	// TODO: revisit to maybe remove this later, might not be a good default for update
 	if expense.Currency == "" {
 		expense.Currency = s.defaults["currency"]
 	}
 	query := `
 		UPDATE expenses
-		SET name = $1, category = $2, amount = $3, currency = $4, date = $5, tags = $6, recurring_id = $7
-		WHERE id = $8
+		SET description = $1, "from" = $2, "to" = $3, category = $4, amount = $5, currency = $6, date = $7, recurring_id = $8
+		WHERE id = $9
 	`
-	result, err := s.db.Exec(query, expense.Name, expense.Category, expense.Amount, expense.Currency, expense.Date, string(tagsJSON), expense.RecurringID, id)
+	result, err := s.db.Exec(query, expense.Description, expense.From, expense.To, expense.Category, expense.Amount, expense.Currency, expense.Date, expense.RecurringID, id)
 	if err != nil {
 		return fmt.Errorf("failed to update expense: %v", err)
 	}
@@ -367,21 +361,22 @@ func (s *databaseStore) RemoveMultipleExpenses(ids []string) error {
 
 func scanRecurringExpense(scanner interface{ Scan(...any) error }) (RecurringExpense, error) {
 	var re RecurringExpense
-	var tagsStr sql.NullString
-	err := scanner.Scan(&re.ID, &re.Name, &re.Amount, &re.Currency, &re.Category, &re.StartDate, &re.Interval, &re.Occurrences, &tagsStr)
+	var fromStr, toStr sql.NullString
+	err := scanner.Scan(&re.ID, &re.Description, &re.Amount, &re.Currency, &fromStr, &toStr, &re.Category, &re.StartDate, &re.Interval, &re.Occurrences)
 	if err != nil {
 		return RecurringExpense{}, err
 	}
-	if tagsStr.Valid && tagsStr.String != "" {
-		if err := json.Unmarshal([]byte(tagsStr.String), &re.Tags); err != nil {
-			return RecurringExpense{}, fmt.Errorf("failed to parse tags for recurring expense %s: %v", re.ID, err)
-		}
+	if fromStr.Valid {
+		re.From = fromStr.String
+	}
+	if toStr.Valid {
+		re.To = toStr.String
 	}
 	return re, nil
 }
 
 func (s *databaseStore) GetRecurringExpenses() ([]RecurringExpense, error) {
-	query := `SELECT id, name, amount, currency, category, start_date, interval, occurrences, tags FROM recurring_expenses`
+	query := `SELECT id, description, amount, currency, "from", "to", category, start_date, interval, occurrences FROM recurring_expenses`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query recurring expenses: %v", err)
@@ -399,7 +394,7 @@ func (s *databaseStore) GetRecurringExpenses() ([]RecurringExpense, error) {
 }
 
 func (s *databaseStore) GetRecurringExpense(id string) (RecurringExpense, error) {
-	query := `SELECT id, name, amount, category, start_date, interval, occurrences, tags FROM recurring_expenses WHERE id = $1`
+	query := `SELECT id, description, amount, currency, "from", "to", category, start_date, interval, occurrences FROM recurring_expenses WHERE id = $1`
 	re, err := scanRecurringExpense(s.db.QueryRow(query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -423,26 +418,24 @@ func (s *databaseStore) AddRecurringExpense(recurringExpense RecurringExpense) e
 	if recurringExpense.Currency == "" {
 		recurringExpense.Currency = s.defaults["currency"]
 	}
-	tagsJSON, _ := json.Marshal(recurringExpense.Tags)
 	ruleQuery := `
-		INSERT INTO recurring_expenses (id, name, amount, currency, category, start_date, interval, occurrences, tags)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO recurring_expenses (id, description, amount, currency, "from", "to", category, start_date, interval, occurrences)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
-	_, err = tx.Exec(ruleQuery, recurringExpense.ID, recurringExpense.Name, recurringExpense.Amount, recurringExpense.Currency, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences, string(tagsJSON))
+	_, err = tx.Exec(ruleQuery, recurringExpense.ID, recurringExpense.Description, recurringExpense.Amount, recurringExpense.Currency, recurringExpense.From, recurringExpense.To, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences)
 	if err != nil {
 		return fmt.Errorf("failed to insert recurring expense rule: %v", err)
 	}
 
 	expensesToAdd := generateExpensesFromRecurring(recurringExpense, false)
 	if len(expensesToAdd) > 0 {
-		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "name", "category", "amount", "currency", "date", "tags"))
+		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "category", "amount", "currency", "date"))
 		if err != nil {
 			return fmt.Errorf("failed to prepare copy in: %v", err)
 		}
 		defer stmt.Close()
 		for _, exp := range expensesToAdd {
-			expTagsJSON, _ := json.Marshal(exp.Tags)
-			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Name, exp.Category, exp.Amount, exp.Currency, exp.Date, string(expTagsJSON))
+			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Category, exp.Amount, exp.Currency, exp.Date)
 			if err != nil {
 				return fmt.Errorf("failed to execute copy in: %v", err)
 			}
@@ -464,13 +457,12 @@ func (s *databaseStore) UpdateRecurringExpense(id string, recurringExpense Recur
 	if recurringExpense.Currency == "" {
 		recurringExpense.Currency = s.defaults["currency"]
 	}
-	tagsJSON, _ := json.Marshal(recurringExpense.Tags)
 	ruleQuery := `
 		UPDATE recurring_expenses
-		SET name = $1, amount = $2, category = $3, start_date = $4, interval = $5, occurrences = $6, tags = $7, currency = $8
-		WHERE id = $9
+		SET description = $1, amount = $2, "from" = $3, "to" = $4, category = $5, start_date = $6, interval = $7, occurrences = $8, currency = $9
+		WHERE id = $10
 	`
-	res, err := tx.Exec(ruleQuery, recurringExpense.Name, recurringExpense.Amount, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences, string(tagsJSON), recurringExpense.Currency, id)
+	res, err := tx.Exec(ruleQuery, recurringExpense.Description, recurringExpense.Amount, recurringExpense.From, recurringExpense.To, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences, recurringExpense.Currency, id)
 	if err != nil {
 		return fmt.Errorf("failed to update recurring expense rule: %v", err)
 	}
@@ -493,14 +485,13 @@ func (s *databaseStore) UpdateRecurringExpense(id string, recurringExpense Recur
 
 	expensesToAdd := generateExpensesFromRecurring(recurringExpense, !updateAll)
 	if len(expensesToAdd) > 0 {
-		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "name", "category", "amount", "currency", "date", "tags"))
+		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "category", "amount", "currency", "date"))
 		if err != nil {
 			return fmt.Errorf("failed to prepare copy in for update: %v", err)
 		}
 		defer stmt.Close()
 		for _, exp := range expensesToAdd {
-			expTagsJSON, _ := json.Marshal(exp.Tags)
-			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Name, exp.Category, exp.Amount, exp.Currency, exp.Date, string(expTagsJSON))
+			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Category, exp.Amount, exp.Currency, exp.Date)
 			if err != nil {
 				return fmt.Errorf("failed to execute copy in for update: %v", err)
 			}
@@ -574,12 +565,13 @@ func generateExpensesFromRecurring(recExp RecurringExpense, fromToday bool) []Ex
 		expense := Expense{
 			ID:          uuid.New().String(),
 			RecurringID: recExp.ID,
-			Name:        recExp.Name,
+			Description: recExp.Description,
+			From:        recExp.From,
+			To:          recExp.To,
 			Category:    recExp.Category,
 			Amount:      recExp.Amount,
 			Currency:    recExp.Currency,
 			Date:        currentDate,
-			Tags:        recExp.Tags,
 		}
 		expenses = append(expenses, expense)
 		switch recExp.Interval {

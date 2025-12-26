@@ -124,24 +124,24 @@
             <h2 align="center" data-i18n="settings.recurring_transactions">Recurring Transactions</h2>
             <form id="recurringExpenseForm" class="expense-form recurring-expense-form">
                 <div class="form-group">
-                    <label for="recurringName" data-i18n="common.name">Name</label>
-                    <input type="text" id="recurringName" required>
+                    <label for="recurringDescription" data-i18n="common.description">Description</label>
+                    <input type="text" id="recurringDescription" required>
                 </div>
                 <div class="form-group">
                     <label for="recurringAmount" data-i18n="common.amount">Amount</label>
                     <input type="number" id="recurringAmount" step="0.01" min="0.01" max="9000000000000000" required>
                 </div>
                 <div class="form-group">
-                    <label for="recurringCategory" data-i18n="common.category">Category</label>
-                    <select id="recurringCategory" required></select>
+                    <label for="recurringFrom" data-i18n="common.from">From</label>
+                    <input type="text" id="recurringFrom">
                 </div>
                 <div class="form-group">
-                    <label for="tags-input" data-i18n="common.tags">Tags</label>
-                    <div class="tags-input-container">
-                        <div id="selected-tags" class="selected-tags"></div>
-                        <input type="text" id="tags-input" placeholder="(optional)" data-i18n="form.tags_placeholder" data-i18n-attr="placeholder">
-                    </div>
-                    <div id="tags-dropdown" class="tags-dropdown"></div>
+                    <label for="recurringTo" data-i18n="common.to">To</label>
+                    <input type="text" id="recurringTo">
+                </div>
+                <div class="form-group">
+                    <label for="recurringCategory" data-i18n="common.category">Category</label>
+                    <select id="recurringCategory" required></select>
                 </div>
                 <div class="form-group">
                     <label for="recurringInterval" data-i18n="recurring.interval">Interval</label>
@@ -198,24 +198,24 @@
             <h3 data-i18n="modal.edit_recurring">Edit Recurring Expense</h3>
             <form id="editRecurringExpenseForm" class="expense-form recurring-expense-form">
                  <div class="form-group">
-                    <label for="editRecurringName" data-i18n="common.name">Name</label>
-                    <input type="text" id="editRecurringName" required>
+                    <label for="editRecurringDescription" data-i18n="common.description">Description</label>
+                    <input type="text" id="editRecurringDescription" required>
                 </div>
                 <div class="form-group">
                     <label for="editRecurringAmount" data-i18n="common.amount">Amount</label>
                     <input type="number" id="editRecurringAmount" step="0.01" min="0" required>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringCategory" data-i18n="common.category">Category</label>
-                    <select id="editRecurringCategory" required></select>
+                    <label for="editRecurringFrom" data-i18n="common.from">From</label>
+                    <input type="text" id="editRecurringFrom">
                 </div>
                 <div class="form-group">
-                    <label for="edit-tags-input" data-i18n="common.tags">Tags</label>
-                    <div class="tags-input-container">
-                        <div id="edit-selected-tags" class="selected-tags"></div>
-                        <input type="text" id="edit-tags-input" placeholder="(optional)" data-i18n="form.tags_placeholder" data-i18n-attr="placeholder">
-                    </div>
-                    <div id="edit-tags-dropdown" class="tags-dropdown"></div>
+                    <label for="editRecurringTo" data-i18n="common.to">To</label>
+                    <input type="text" id="editRecurringTo">
+                </div>
+                <div class="form-group">
+                    <label for="editRecurringCategory" data-i18n="common.category">Category</label>
+                    <select id="editRecurringCategory" required></select>
                 </div>
                 <div class="form-group">
                     <label for="editRecurringInterval" data-i18n="recurring.interval">Interval</label>
@@ -250,9 +250,6 @@
     <script src="/functions.js"></script>
     <script>
         let categories = [];
-        let allTags = new Set();
-        let addFormSelectedTags = new Set();
-        let editFormSelectedTags = new Set();
         let currentCurrency = "usd";
         let currentStartDate = 1;
         let draggedItem = null;
@@ -485,94 +482,6 @@
                 showMessage('categoriesMessage', 'Error saving categories', false);
             }
         }
-        
-        // --- Tag Input Component ---
-        function createTagInput(inputId, selectedContainerId, dropdownId, selectedTagsSet) {
-            const input = document.getElementById(inputId);
-            const selectedContainer = document.getElementById(selectedContainerId);
-            const dropdown = document.getElementById(dropdownId);
-
-            const renderSelected = () => {
-                selectedContainer.innerHTML = '';
-                selectedTagsSet.forEach(tag => {
-                    const pill = document.createElement('div');
-                    pill.className = 'tag-pill';
-                    pill.textContent = tag;
-                    const removeBtn = document.createElement('span');
-                    removeBtn.className = 'remove-tag';
-                    removeBtn.textContent = '×';
-                    removeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        selectedTagsSet.delete(tag);
-                        renderSelected();
-                    };
-                    pill.appendChild(removeBtn);
-                    selectedContainer.appendChild(pill);
-                });
-            };
-
-            const addTag = (tag) => {
-                tag = tag.trim().replace(/[<>]/g, ' ').trim();
-                if (tag) {
-                    selectedTagsSet.add(tag);
-                    renderSelected();
-                }
-                input.value = '';
-                dropdown.style.display = 'none';
-            };
-            
-            input.addEventListener('focus', () => {
-                const value = input.value.trim().toLowerCase();
-                dropdown.innerHTML = '';
-                const availableTags = [...allTags].filter(tag => !selectedTagsSet.has(tag));
-                if (availableTags.length > 0) {
-                    availableTags.forEach(tag => {
-                        const item = document.createElement('div');
-                        item.textContent = tag;
-                        item.onclick = () => addTag(tag);
-                        dropdown.appendChild(item);
-                    });
-                    dropdown.style.display = 'block';
-                }
-            });
-
-            input.addEventListener('input', () => {
-                const value = input.value.trim().toLowerCase();
-                dropdown.innerHTML = '';
-                const filteredTags = [...allTags].filter(tag => tag.toLowerCase().includes(value) && !selectedTagsSet.has(tag));
-
-                if (value && ![...allTags].map(t => t.toLowerCase()).includes(value)) {
-                    const newItem = document.createElement('div');
-                    newItem.textContent = `+ Create "${input.value.trim()}"`;
-                    newItem.className = 'new-tag';
-                    newItem.onclick = () => addTag(input.value.trim());
-                    dropdown.appendChild(newItem);
-                }
-                
-                filteredTags.forEach(tag => {
-                    const item = document.createElement('div');
-                    item.textContent = tag;
-                    item.onclick = () => addTag(tag);
-                    dropdown.appendChild(item);
-                });
-                dropdown.style.display = dropdown.children.length > 0 ? 'block' : 'none';
-            });
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (input.value.trim()) addTag(input.value.trim());
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                const container = input.closest('.tags-input-container');
-                if (container && !container.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
-            return { renderSelected };
-        }
 
         // --- Currency & Start Date ---
         function populateCurrencySelect() {
@@ -673,11 +582,13 @@
             }
             list.innerHTML = `
                 <table class="expense-table">
-                    <thead><tr><th>Name</th><th>Amount</th><th>Category</th><th>Interval</th><th>Next Occurrence</th><th></th></tr></thead>
+                    <thead><tr><th>Description</th><th>From</th><th>To</th><th>Amount</th><th>Category</th><th>Interval</th><th>Next Occurrence</th><th></th></tr></thead>
                     <tbody>
                         ${recurring.map(r => `
                             <tr>
-                                <td>${r.name}</td>
+                                <td>${r.description || ''}</td>
+                                <td>${r.from || ''}</td>
+                                <td>${r.to || ''}</td>
                                 <td>${formatCurrency(r.amount)}</td>
                                 <td>${r.category}</td>
                                 <td>${r.interval.charAt(0).toUpperCase() + r.interval.slice(1)}</td>
@@ -720,15 +631,15 @@
         function showRecurringEditModal(id) {
             recurringExpenseToEdit = recurringExpenses.find(r => r.id === id);
             if (!recurringExpenseToEdit) return;
-            document.getElementById('editRecurringName').value = recurringExpenseToEdit.name;
+            document.getElementById('editRecurringDescription').value = recurringExpenseToEdit.description || '';
             document.getElementById('editRecurringAmount').value = Math.abs(recurringExpenseToEdit.amount);
             document.getElementById('editRecurringReportGain').checked = recurringExpenseToEdit.amount > 0;
+            document.getElementById('editRecurringFrom').value = recurringExpenseToEdit.from || '';
+            document.getElementById('editRecurringTo').value = recurringExpenseToEdit.to || '';
             document.getElementById('editRecurringCategory').value = recurringExpenseToEdit.category;
             document.getElementById('editRecurringInterval').value = recurringExpenseToEdit.interval;
             document.getElementById('editRecurringStartDate').value = new Date(recurringExpenseToEdit.startDate).toISOString().split('T')[0];
             document.getElementById('editRecurringOccurrences').value = recurringExpenseToEdit.occurrences;
-            editFormSelectedTags = new Set(recurringExpenseToEdit.tags || []);
-            createTagInput('edit-tags-input', 'edit-selected-tags', 'edit-tags-dropdown', editFormSelectedTags).renderSelected();
             document.getElementById('editRecurringModal').classList.add('active');
         }
         
@@ -746,10 +657,11 @@
 
             const updatedData = {
                 ...recurringExpenseToEdit,
-                name: document.getElementById('editRecurringName').value,
+                description: document.getElementById('editRecurringDescription').value,
                 amount: amount,
+                from: document.getElementById('editRecurringFrom').value,
+                to: document.getElementById('editRecurringTo').value,
                 category: document.getElementById('editRecurringCategory').value,
-                tags: Array.from(editFormSelectedTags),
                 interval: document.getElementById('editRecurringInterval').value,
                 startDate: new Date(document.getElementById('editRecurringStartDate').value).toISOString(),
                 occurrences: parseInt(document.getElementById('editRecurringOccurrences').value, 10)
@@ -880,9 +792,6 @@
                 categories = [...config.categories];
                 currentCurrency = config.currency;
                 currentStartDate = config.startDate;
-                allTags.clear();
-                (expenses || []).forEach(exp => (exp.tags || []).forEach(tag => allTags.add(tag)));
-                (recurringExpenses || []).forEach(exp => (exp.tags || []).forEach(tag => allTags.add(tag)));
 
                 renderCategories();
                 populateCurrencySelect();
@@ -891,7 +800,6 @@
                 document.getElementById('editRecurringCategory').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
                 renderRecurringExpenses(recurringExpenses);
 
-                createTagInput('tags-input', 'selected-tags', 'tags-dropdown', addFormSelectedTags);
                 fetch('/version').then(r => r.ok ? r.text() : 'dev').then(version => {
                     const link = document.getElementById('version-link');
                     if (link) {
@@ -957,10 +865,11 @@
             if (!isGain) amount *= -1;
 
             const formData = {
-                name: document.getElementById('recurringName').value,
+                description: document.getElementById('recurringDescription').value,
                 amount: amount,
+                from: document.getElementById('recurringFrom').value,
+                to: document.getElementById('recurringTo').value,
                 category: document.getElementById('recurringCategory').value,
-                tags: Array.from(addFormSelectedTags),
                 interval: document.getElementById('recurringInterval').value,
                 startDate: getISODateWithLocalTime(document.getElementById('recurringStartDate').value),
                 occurrences: parseInt(document.getElementById('recurringOccurrences').value, 10)
@@ -975,8 +884,6 @@
                 if (response.ok) {
                     showMessage('recurringExpenseMessage', 'Recurring expense added successfully!', true);
                     document.getElementById('recurringExpenseForm').reset();
-                    document.getElementById('selected-tags').innerHTML = '';
-                    addFormSelectedTags.clear();
                     fetchAndRenderRecurringExpenses();
                 } else {
                     const error = await response.json();
