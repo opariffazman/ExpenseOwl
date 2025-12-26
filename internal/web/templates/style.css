@@ -77,7 +77,7 @@ header {
 }
 
 @media (prefers-color-scheme: light) {
-    #prevMonth, #nextMonth, #toggleExpenseFormBtn {
+    #prevMonth, #nextMonth, #toggleExpenseFormBtn, #toggleGainFormBtn {
         background-color: var(--bg-secondary);
     }
 }
@@ -855,7 +855,35 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 0.5rem;
     margin-bottom: 1rem;
+}
+
+.form-mode-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+.mode-button {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.mode-button:hover {
+    background-color: var(--accent);
+}
+
+.mode-button.active {
+    background-color: var(--accent);
+    cursor: default;
 }
 
 .table-controls label {

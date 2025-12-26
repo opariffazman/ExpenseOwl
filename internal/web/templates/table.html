@@ -51,6 +51,10 @@
         </div>
 
         <div class="form-container">
+            <div class="form-mode-toggle">
+                <button type="button" id="expenseModeBtn" class="mode-button active">Add Expense</button>
+                <button type="button" id="gainModeBtn" class="mode-button">Add Gains</button>
+            </div>
             <form id="expenseForm" class="expense-form">
                 <div class="form-group">
                     <label for="name">Name</label>
@@ -91,12 +95,7 @@
                     </script>
                 </div>
                 
-                <div class="form-group form-group-checkbox">
-                    <label for="reportGain">Report Gain</label>
-                    <input type="checkbox" id="reportGain" class="styled-checkbox">
-                </div>
-
-                <button type="submit" class="nav-button">Add Expense</button>
+                <button type="submit" id="submitBtn" class="nav-button">Add Expense</button>
             </form>
             <div id="formMessage" class="form-message"></div>
         </div>
@@ -125,6 +124,33 @@
         let startDate = 1;
         let allTags = new Set();
         let selectedTags = new Set();
+        let isAddingGain = false;
+
+        function setFormMode(isGain, isEditing = false) {
+            isAddingGain = isGain;
+            const expenseBtn = document.getElementById('expenseModeBtn');
+            const gainBtn = document.getElementById('gainModeBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (isGain) {
+                gainBtn.classList.add('active');
+                expenseBtn.classList.remove('active');
+                submitBtn.textContent = isEditing ? 'Update Gain' : 'Add Gain';
+            } else {
+                expenseBtn.classList.add('active');
+                gainBtn.classList.remove('active');
+                submitBtn.textContent = isEditing ? 'Update Expense' : 'Add Expense';
+            }
+        }
+
+        document.getElementById('expenseModeBtn').addEventListener('click', () => {
+            const form = document.getElementById('expenseForm');
+            setFormMode(false, !!form.dataset.editId);
+        });
+        document.getElementById('gainModeBtn').addEventListener('click', () => {
+            const form = document.getElementById('expenseForm');
+            setFormMode(true, !!form.dataset.editId);
+        });
 
         function createTable(expenses) {
             if (!expenses || expenses.length === 0) {
@@ -214,20 +240,18 @@
             document.getElementById('name').value = name;
             document.getElementById('category').value = category;
             document.getElementById('amount').value = Math.abs(amount);
-            document.getElementById('reportGain').checked = isGain;
+            setFormMode(isGain, true);
             renderSelectedTags(tags);
-            
+
             const localDate = new Date(date);
             const year = localDate.getFullYear();
             const month = String(localDate.getMonth() + 1).padStart(2, '0');
             const day = String(localDate.getDate()).padStart(2, '0');
             document.getElementById('date').value = `${year}-${month}-${day}`;
-            
+
             const form = document.getElementById('expenseForm');
             form.dataset.editId = id;
-            const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.textContent = 'Update Expense';
-            
+
             form.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -400,9 +424,8 @@
             e.preventDefault();
             const form = e.target;
             const editId = form.dataset.editId;
-            const isGain = document.getElementById('reportGain').checked;
             let amount = parseFloat(document.getElementById('amount').value);
-            if (!isGain) {
+            if (!isAddingGain) {
                 amount *= -1;
             }
 
@@ -422,13 +445,14 @@
                 });
                 const messageDiv = document.getElementById('formMessage');
                 if (response.ok) {
-                    messageDiv.textContent = editId ? 'Expense updated successfully!' : 'Expense added successfully!';
+                    const typeLabel = isAddingGain ? 'Gain' : 'Expense';
+                    messageDiv.textContent = editId ? `${typeLabel} updated successfully!` : `${typeLabel} added successfully!`;
                     messageDiv.className = 'form-message success';
                     form.reset();
                     document.getElementById('selected-tags').innerHTML = '';
                     selectedTags.clear();
                     delete form.dataset.editId;
-                    form.querySelector('button[type="submit"]').textContent = 'Add Expense';
+                    setFormMode(false, false);
                     await initialize();
                     const today = new Date();
                     const year = today.getFullYear();
