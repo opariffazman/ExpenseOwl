@@ -15,14 +15,14 @@
             }
         })();
     </script>
-    <title>ExpenseOwl Settings</title>
+    <title>TH Settings</title>
 </head>
 <body>
     <div class="container">
         <header>
             <div class="nav-bar">
                 <a href="/">
-                    <img src="/pwa/icon-192.png" alt="ExpenseOwl Logo" height="85" style="vertical-align: middle; margin-right: 20px;">
+                    <img src="/pwa/icon-192.png" alt="TH Logo" height="85" style="vertical-align: middle; margin-right: 20px;">
                 </a>
                 <a href="/" class="view-button" data-tooltip="Dashboard">
                     <i class="fa-solid fa-chart-pie"></i>
@@ -37,14 +37,6 @@
                 {{end}}
             </div>
         </header>
-
-        <div class="info-field">
-            Version: <a href="https://github.com/tanq16/expenseowl/releases/latest" target="_blank" rel="noopener noreferrer">v4.0</a>
-            <span class="separator">|</span>
-            <a href="https://github.com/tanq16/expenseowl/blob/main/README.md" target="_blank" rel="noopener noreferrer">Documentation</a>
-            <span class="separator">|</span>
-            <a href="https://github.com/tanq16/expenseowl" target="_blank" rel="noopener noreferrer">GitHub</a>
-        </div>
 
         <div class="form-container">
             <h2 align="center" data-i18n="settings.category_settings">Category Settings</h2>
@@ -115,10 +107,6 @@
                     <div class="import-option">
                         <label for="csv-import-file" class="nav-button" data-i18n="settings.import_csv">Import from CSV</label>
                         <input type="file" id="csv-import-file" accept=".csv" style="display: none;">
-                    </div>
-                    <div class="import-option">
-                        <label for="csv-import-file-old" class="nav-button" data-i18n="settings.import_old">Import from ExpenseOwl v3.20-</label>
-                        <input type="file" id="csv-import-file-old" accept=".csv" style="display: none;">
                     </div>
                 </div>
                 <div id="importMessage" class="form-message"></div>
