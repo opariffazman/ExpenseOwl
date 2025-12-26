@@ -57,6 +57,7 @@
 
         <div class="table-controls">
             <button id="toggleExpenseFormBtn" class="nav-button"><i class="fa-solid fa-plus"></i> Add Expense</button>
+            <button id="toggleGainFormBtn" class="nav-button"><i class="fa-solid fa-plus"></i> Add Gains</button>
         </div>
 
         <div id="addExpenseContainer" style="display: none;">
@@ -101,12 +102,7 @@
                         </script>
                     </div>
                     
-                    <div class="form-group form-group-checkbox">
-                        <label for="reportGain">Report Gain</label>
-                        <input type="checkbox" id="reportGain" class="styled-checkbox">
-                    </div>
-    
-                    <button type="submit" class="nav-button">Add Expense</button>
+                        <button type="submit" id="submitBtn" class="nav-button">Add Expense</button>
                 </form>
                 <div id="formMessage" class="form-message"></div>
             </div>
@@ -463,24 +459,42 @@
             updateChartAndLegend();
         });
 
-        document.getElementById('toggleExpenseFormBtn').addEventListener('click', function() {
-            const formContainer = document.getElementById('addExpenseContainer');
-            const isHidden = formContainer.style.display === 'none' || formContainer.style.display === '';
+        let isAddingGain = false;
 
-            if (isHidden) {
+        function toggleForm(isGain) {
+            const formContainer = document.getElementById('addExpenseContainer');
+            const expenseBtn = document.getElementById('toggleExpenseFormBtn');
+            const gainBtn = document.getElementById('toggleGainFormBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const isHidden = formContainer.style.display === 'none' || formContainer.style.display === '';
+            const switchingMode = !isHidden && isAddingGain !== isGain;
+
+            if (isHidden || switchingMode) {
                 formContainer.style.display = 'block';
-                this.innerHTML = '<i class="fa-solid fa-times"></i> Close';
+                isAddingGain = isGain;
+                if (isGain) {
+                    gainBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close';
+                    expenseBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
+                    submitBtn.textContent = 'Add Gain';
+                } else {
+                    expenseBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close';
+                    gainBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Gains';
+                    submitBtn.textContent = 'Add Expense';
+                }
             } else {
                 formContainer.style.display = 'none';
-                this.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
+                expenseBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
+                gainBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Gains';
             }
-        });
+        }
+
+        document.getElementById('toggleExpenseFormBtn').addEventListener('click', () => toggleForm(false));
+        document.getElementById('toggleGainFormBtn').addEventListener('click', () => toggleForm(true));
 
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const isGain = document.getElementById('reportGain').checked;
             let amount = parseFloat(document.getElementById('amount').value);
-            if (!isGain) {
+            if (!isAddingGain) {
                 amount *= -1;
             }
             const formData = {
@@ -498,7 +512,7 @@
                 });
                 const messageDiv = document.getElementById('formMessage');
                 if (response.ok) {
-                    messageDiv.textContent = 'Expense added successfully!';
+                    messageDiv.textContent = isAddingGain ? 'Gain added successfully!' : 'Expense added successfully!';
                     messageDiv.className = 'form-message success';
                     document.getElementById('expenseForm').reset();
                     document.getElementById('selected-tags').innerHTML = '';
