@@ -2,24 +2,42 @@ package web
 
 import (
 	"embed"
+	"html/template"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
 //go:embed templates
 var content embed.FS
 
+// TemplateData holds data to be passed to templates
+type TemplateData struct {
+	HideSettings bool
+}
+
 func GetTemplates() *embed.FS {
 	return &content
 }
 
+// GetTemplateData returns template data based on environment variables
+func GetTemplateData() TemplateData {
+	hideSettings := os.Getenv("HIDE_SETTINGS") == "true"
+	return TemplateData{
+		HideSettings: hideSettings,
+	}
+}
+
 func ServeTemplate(w http.ResponseWriter, templateName string) error {
-	templateContent, err := content.ReadFile("templates/" + templateName)
+	return ServeTemplateWithData(w, templateName, GetTemplateData())
+}
+
+func ServeTemplateWithData(w http.ResponseWriter, templateName string, data TemplateData) error {
+	tmpl, err := template.ParseFS(content, "templates/"+templateName)
 	if err != nil {
 		return err
 	}
-	_, err = w.Write(templateContent)
-	return err
+	return tmpl.Execute(w, data)
 }
 
 func ServeStatic(w http.ResponseWriter, staticPath string) error {

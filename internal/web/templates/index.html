@@ -43,9 +43,11 @@
                 <a href="/table" class="view-button" data-tooltip="Table View">
                     <i class="fa-solid fa-table"></i>
                 </a>
+                {{if not .HideSettings}}
                 <a href="/settings" class="view-button" data-tooltip="Settings">
                     <i class="fa-solid fa-gear"></i>
                 </a>
+                {{end}}
             </div>
         </header>
 
