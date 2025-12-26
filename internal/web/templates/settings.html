@@ -45,35 +45,35 @@
         </div>
 
         <div class="form-container">
-            <h2 align="center">Category Settings</h2>
+            <h2 align="center" data-i18n="settings.category_settings">Category Settings</h2>
             <div id="categories-manager">
                 <div id="categories-list" class="categories-list">
                 </div>
                 <div class="category-input-container">
-                    <input type="text" id="newCategory" placeholder="Add new category">
-                    <button id="addCategory" class="nav-button">Add</button>
+                    <input type="text" id="newCategory" placeholder="Add new category" data-i18n="settings.add_new_category" data-i18n-attr="placeholder">
+                    <button id="addCategory" class="nav-button" data-i18n="common.add">Add</button>
                 </div>
-                <button id="saveCategories" class="nav-button">Save Categories</button>
+                <button id="saveCategories" class="nav-button" data-i18n="settings.save_categories">Save Categories</button>
                 <div id="categoriesMessage" class="form-message"></div>
             </div>
         </div>
 
         <div class="settings-container">
             <div class="form-container half-width">
-                <h2 align="center">Currency Settings</h2>
+                <h2 align="center" data-i18n="settings.currency_settings">Currency Settings</h2>
                 <div class="currency-selector">
                     <select id="currencySelect">
                     </select>
-                    <button id="saveCurrency" class="nav-button">Save</button>
+                    <button id="saveCurrency" class="nav-button" data-i18n="common.save">Save</button>
                 </div>
                 <div id="currencyMessage" class="form-message"></div>
             </div>
-            
+
             <div class="form-container half-width">
-                <h2 align="center">Start Date Settings</h2>
+                <h2 align="center" data-i18n="settings.start_date_settings">Start Date Settings</h2>
                 <div class="start-date-manager">
-                    <input type="number" id="startDate" min="1" max="31" placeholder="1">
-                    <button id="saveStartDate" class="nav-button">Save</button>
+                    <input type="number" id="startDate" min="1" max="31" placeholder="1" data-i18n="settings.start_date_placeholder" data-i18n-attr="placeholder">
+                    <button id="saveStartDate" class="nav-button" data-i18n="common.save">Save</button>
                 </div>
                 <div id="startDateMessage" class="form-message"></div>
             </div>
@@ -107,62 +107,62 @@
                 <h2 align="center" data-i18n="settings.import_export">Import/Export Data</h2>
                 <div class="export-buttons">
                     <div class="export-options">
-                        <a href="/export/csv" id="csv-export-file" class="nav-button" download="expenses.csv">Export to CSV</a>
+                        <a href="/export/csv" id="csv-export-file" class="nav-button" download="expenses.csv" data-i18n="settings.export_csv">Export to CSV</a>
                     </div>
                     <div class="import-option">
-                        <label for="csv-import-file" class="nav-button">Import from CSV</label>
+                        <label for="csv-import-file" class="nav-button" data-i18n="settings.import_csv">Import from CSV</label>
                         <input type="file" id="csv-import-file" accept=".csv" style="display: none;">
                     </div>
                     <div class="import-option">
-                        <label for="csv-import-file-old" class="nav-button">Import from ExpenseOwl v3.20-</label>
+                        <label for="csv-import-file-old" class="nav-button" data-i18n="settings.import_old">Import from ExpenseOwl v3.20-</label>
                         <input type="file" id="csv-import-file-old" accept=".csv" style="display: none;">
                     </div>
                 </div>
                 <div id="importMessage" class="form-message"></div>
                 <div id="importSummary" class="import-summary" style="display: none;">
-                    <h3>Import Summary</h3>
-                    <p>Total Processed: <span id="summary-processed"></span></p>
-                    <p>Imported: <span id="summary-imported"></span></p>
-                    <p>Skipped: <span id="summary-skipped"></span></p>
-                    <p>New Categories: <span id="summary-new-categories"></span></p>
+                    <h3 data-i18n="import.summary">Import Summary</h3>
+                    <p><span data-i18n="import.total_processed">Total Processed:</span> <span id="summary-processed"></span></p>
+                    <p><span data-i18n="import.imported">Imported:</span> <span id="summary-imported"></span></p>
+                    <p><span data-i18n="import.skipped">Skipped:</span> <span id="summary-skipped"></span></p>
+                    <p><span data-i18n="import.new_categories">New Categories:</span> <span id="summary-new-categories"></span></p>
                 </div>
             </div>
         </div>
         
         <div class="form-container">
-            <h2 align="center">Recurring Transactions</h2>
+            <h2 align="center" data-i18n="settings.recurring_transactions">Recurring Transactions</h2>
             <form id="recurringExpenseForm" class="expense-form recurring-expense-form">
                 <div class="form-group">
-                    <label for="recurringName">Name</label>
+                    <label for="recurringName" data-i18n="common.name">Name</label>
                     <input type="text" id="recurringName" required>
                 </div>
                 <div class="form-group">
-                    <label for="recurringAmount">Amount</label>
+                    <label for="recurringAmount" data-i18n="common.amount">Amount</label>
                     <input type="number" id="recurringAmount" step="0.01" min="0.01" max="9000000000000000" required>
                 </div>
                 <div class="form-group">
-                    <label for="recurringCategory">Category</label>
+                    <label for="recurringCategory" data-i18n="common.category">Category</label>
                     <select id="recurringCategory" required></select>
                 </div>
                 <div class="form-group">
-                    <label for="tags-input">Tags</label>
+                    <label for="tags-input" data-i18n="common.tags">Tags</label>
                     <div class="tags-input-container">
                         <div id="selected-tags" class="selected-tags"></div>
-                        <input type="text" id="tags-input" placeholder="(optional)">
+                        <input type="text" id="tags-input" placeholder="(optional)" data-i18n="form.tags_placeholder" data-i18n-attr="placeholder">
                     </div>
                     <div id="tags-dropdown" class="tags-dropdown"></div>
                 </div>
                 <div class="form-group">
-                    <label for="recurringInterval">Interval</label>
+                    <label for="recurringInterval" data-i18n="recurring.interval">Interval</label>
                     <select id="recurringInterval" required>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="daily" data-i18n="recurring.daily">Daily</option>
+                        <option value="weekly" data-i18n="recurring.weekly">Weekly</option>
+                        <option value="monthly" data-i18n="recurring.monthly">Monthly</option>
+                        <option value="yearly" data-i18n="recurring.yearly">Yearly</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="recurringStartDate">Start Date</label>
+                    <label for="recurringStartDate" data-i18n="recurring.start_date">Start Date</label>
                     <input type="date" id="recurringStartDate" required>
                     <script>
                         const today = new Date();
@@ -174,17 +174,17 @@
                     </script>
                 </div>
                 <div class="form-group">
-                    <label for="recurringOccurrences">Occurrences</label>
+                    <label for="recurringOccurrences" data-i18n="recurring.occurrences">Occurrences</label>
                     <input type="number" id="recurringOccurrences" min="2" value="2" required>
                 </div>
                 <div class="form-group form-group-checkbox">
-                    <label for="recurringReportGain">Report Gain</label>
+                    <label for="recurringReportGain" data-i18n="dashboard.report_gain">Report Gain</label>
                     <input type="checkbox" id="recurringReportGain" class="styled-checkbox">
                 </div>
-                <button type="submit" class="nav-button">Add Recurring Transaction</button>
+                <button type="submit" class="nav-button" data-i18n="settings.add_recurring">Add Recurring Transaction</button>
             </form>
             <div id="recurringExpenseMessage" class="form-message"></div>
-            <h3 align="center" style="margin-top: 2rem;">Existing Recurring Transactions</h3>
+            <h3 align="center" style="margin-top: 2rem;" data-i18n="settings.existing_recurring">Existing Recurring Transactions</h3>
             <div id="recurring-expenses-list">
             </div>
         </div>
@@ -192,66 +192,66 @@
 
     <div id="deleteRecurringModal" class="modal">
         <div class="modal-content">
-            <h3>Delete Recurring Expense</h3>
-            <p>Do you want to delete all instances of this expense, or only future ones?</p>
+            <h3 data-i18n="modal.delete_recurring">Delete Recurring Expense</h3>
+            <p data-i18n="modal.delete_recurring_text">Do you want to delete all instances of this expense, or only future ones?</p>
             <div class="modal-buttons">
-                <button class="modal-button" onclick="closeRecurringDeleteModal()">Cancel</button>
-                <button class="modal-button" onclick="confirmRecurringDelete(false)">Delete Future</button>
-                <button class="modal-button confirm" onclick="confirmRecurringDelete(true)">Delete All</button>
+                <button class="modal-button" onclick="closeRecurringDeleteModal()" data-i18n="common.cancel">Cancel</button>
+                <button class="modal-button" onclick="confirmRecurringDelete(false)" data-i18n="modal.delete_future">Delete Future</button>
+                <button class="modal-button confirm" onclick="confirmRecurringDelete(true)" data-i18n="modal.delete_all">Delete All</button>
             </div>
         </div>
     </div>
 
     <div id="editRecurringModal" class="modal">
         <div class="modal-content">
-            <h3>Edit Recurring Expense</h3>
+            <h3 data-i18n="modal.edit_recurring">Edit Recurring Expense</h3>
             <form id="editRecurringExpenseForm" class="expense-form recurring-expense-form">
                  <div class="form-group">
-                    <label for="editRecurringName">Name</label>
+                    <label for="editRecurringName" data-i18n="common.name">Name</label>
                     <input type="text" id="editRecurringName" required>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringAmount">Amount</label>
+                    <label for="editRecurringAmount" data-i18n="common.amount">Amount</label>
                     <input type="number" id="editRecurringAmount" step="0.01" min="0" required>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringCategory">Category</label>
+                    <label for="editRecurringCategory" data-i18n="common.category">Category</label>
                     <select id="editRecurringCategory" required></select>
                 </div>
                 <div class="form-group">
-                    <label for="edit-tags-input">Tags</label>
+                    <label for="edit-tags-input" data-i18n="common.tags">Tags</label>
                     <div class="tags-input-container">
                         <div id="edit-selected-tags" class="selected-tags"></div>
-                        <input type="text" id="edit-tags-input" placeholder="(optional)">
+                        <input type="text" id="edit-tags-input" placeholder="(optional)" data-i18n="form.tags_placeholder" data-i18n-attr="placeholder">
                     </div>
                     <div id="edit-tags-dropdown" class="tags-dropdown"></div>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringInterval">Interval</label>
+                    <label for="editRecurringInterval" data-i18n="recurring.interval">Interval</label>
                     <select id="editRecurringInterval" required>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="daily" data-i18n="recurring.daily">Daily</option>
+                        <option value="weekly" data-i18n="recurring.weekly">Weekly</option>
+                        <option value="monthly" data-i18n="recurring.monthly">Monthly</option>
+                        <option value="yearly" data-i18n="recurring.yearly">Yearly</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringStartDate">Start Date</label>
+                    <label for="editRecurringStartDate" data-i18n="recurring.start_date">Start Date</label>
                     <input type="date" id="editRecurringStartDate" required>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringOccurrences">Occurrences (0 for indefinite)</label>
+                    <label for="editRecurringOccurrences" data-i18n="recurring.occurrences_help">Occurrences (0 for indefinite)</label>
                     <input type="number" id="editRecurringOccurrences" min="0" value="0" required>
                 </div>
                 <div class="form-group form-group-checkbox">
-                    <label for="editRecurringReportGain">Report Gain</label>
+                    <label for="editRecurringReportGain" data-i18n="dashboard.report_gain">Report Gain</label>
                     <input type="checkbox" id="editRecurringReportGain" class="styled-checkbox">
                 </div>
             </form>
             <div class="modal-buttons">
-                <button class="modal-button" onclick="closeRecurringEditModal()">Cancel</button>
-                <button class="modal-button" onclick="confirmRecurringUpdate(false)">Update Future</button>
-                <button class="modal-button confirm" onclick="confirmRecurringUpdate(true)">Update All</button>
+                <button class="modal-button" onclick="closeRecurringEditModal()" data-i18n="common.cancel">Cancel</button>
+                <button class="modal-button" onclick="confirmRecurringUpdate(false)" data-i18n="modal.update_future">Update Future</button>
+                <button class="modal-button confirm" onclick="confirmRecurringUpdate(true)" data-i18n="modal.update_all">Update All</button>
             </div>
         </div>
     </div>
