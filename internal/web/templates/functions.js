@@ -68,9 +68,11 @@ function formatMonth(date) {
     const year = date.getFullYear();
     const monthIndex = date.getMonth();
     const monthKey = monthKeys[monthIndex];
-    const translatedMonth = t(`months.${monthKey}`, '');
+    const key = `months.${monthKey}`;
+    const translatedMonth = t(key, '');
 
-    if (translatedMonth) {
+    // Only use translation if it exists and isn't the key itself
+    if (translatedMonth && translatedMonth !== key) {
         return `${translatedMonth} ${year}`;
     }
     return date.toLocaleDateString('en-US', {
