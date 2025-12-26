@@ -15,7 +15,7 @@
             }
         })();
     </script>
-    <title>ExpenseOwl Settings</title>
+    <title data-i18n="settings.title">ExpenseOwl Settings</title>
 </head>
 <body>
     <div class="container">
@@ -24,22 +24,22 @@
                 <a href="/">
                     <img src="/pwa/icon-192.png" alt="ExpenseOwl Logo" height="85" style="vertical-align: middle; margin-right: 20px;">
                 </a>
-                <a href="/" class="view-button" data-tooltip="Dashboard">
+                <a href="/" class="view-button" data-tooltip="Dashboard" data-i18n="navigation.dashboard" data-i18n-attr="data-tooltip">
                     <i class="fa-solid fa-chart-pie"></i>
                 </a>
-                <a href="/table" class="view-button" data-tooltip="Table View">
+                <a href="/table" class="view-button" data-tooltip="Table View" data-i18n="navigation.table_view" data-i18n-attr="data-tooltip">
                     <i class="fa-solid fa-table"></i>
                 </a>
-                <a href="/settings" class="view-button active" data-tooltip="Settings">
+                <a href="/settings" class="view-button active" data-tooltip="Settings" data-i18n="navigation.settings" data-i18n-attr="data-tooltip">
                     <i class="fa-solid fa-gear"></i>
                 </a>
             </div>
         </header>
 
         <div class="info-field">
-            Version: <a href="https://github.com/tanq16/expenseowl/releases/latest" target="_blank" rel="noopener noreferrer">v4.0</a>
+            <span data-i18n="settings.version">Version:</span> <a href="https://github.com/tanq16/expenseowl/releases/latest" target="_blank" rel="noopener noreferrer">v4.0</a>
             <span class="separator">|</span>
-            <a href="https://github.com/tanq16/expenseowl/blob/main/README.md" target="_blank" rel="noopener noreferrer">Documentation</a>
+            <a href="https://github.com/tanq16/expenseowl/blob/main/README.md" target="_blank" rel="noopener noreferrer" data-i18n="settings.documentation">Documentation</a>
             <span class="separator">|</span>
             <a href="https://github.com/tanq16/expenseowl" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
@@ -81,18 +81,30 @@
 
         <div class="settings-container">
             <div class="form-container half-width">
-                <h2 align="center">Theme Settings</h2>
+                <h2 align="center" data-i18n="settings.theme_settings">Theme Settings</h2>
                 <div class="theme-selector">
                     <select id="themeSelect">
-                        <option value="system">System Default</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+                        <option value="system" data-i18n="theme.system">System Default</option>
+                        <option value="light" data-i18n="theme.light">Light</option>
+                        <option value="dark" data-i18n="theme.dark">Dark</option>
                     </select>
                 </div>
                 <div id="themeMessage" class="form-message"></div>
             </div>
             <div class="form-container half-width">
-                <h2 align="center">Import/Export Data</h2>
+                <h2 align="center" data-i18n="settings.language_settings">Language Settings</h2>
+                <div class="language-selector">
+                    <select id="languageSelect">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div id="languageMessage" class="form-message"></div>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            <div class="form-container half-width">
+                <h2 align="center" data-i18n="settings.import_export">Import/Export Data</h2>
                 <div class="export-buttons">
                     <div class="export-options">
                         <a href="/export/csv" id="csv-export-file" class="nav-button" download="expenses.csv">Export to CSV</a>
@@ -244,6 +256,7 @@
         </div>
     </div>
 
+    <script src="/i18n.js"></script>
     <script src="/functions.js"></script>
     <script>
         let categories = [];
@@ -766,6 +779,35 @@
             }
         }
 
+        // --- Language Settings ---
+        function populateLanguageSelect() {
+            const select = document.getElementById('languageSelect');
+            const localeNames = {
+                'en': 'English',
+                'ms': 'Bahasa Malaysia',
+                'es': 'Español',
+                'fr': 'Français',
+                'de': 'Deutsch'
+            };
+
+            const locales = i18n.getAvailableLocales();
+            locales.forEach(locale => {
+                const option = document.createElement('option');
+                option.value = locale;
+                option.textContent = localeNames[locale] || locale.toUpperCase();
+                if (locale === i18n.currentLocale) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
+            const selectedLocale = e.target.value;
+            await i18n.setLocale(selectedLocale);
+            showMessage('languageMessage', typeof i18n !== 'undefined' ? i18n.t('settings.language_updated') : 'Language updated successfully.', true);
+        });
+
         // --- Initialization ---
         async function initialize() {
             try {
@@ -791,6 +833,7 @@
                 renderCategories();
                 populateCurrencySelect();
                 populateStartDateInput();
+                populateLanguageSelect();
                 document.getElementById('recurringCategory').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
                 document.getElementById('editRecurringCategory').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
                 renderRecurringExpenses(recurringExpenses);
@@ -875,7 +918,10 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', initialize);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await i18n.init();
+            await initialize();
+        });
         window.removeCategory = removeCategory;
         window.showRecurringDeleteModal = showRecurringDeleteModal;
         window.closeRecurringDeleteModal = closeRecurringDeleteModal;

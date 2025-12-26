@@ -48,7 +48,9 @@ func runServer(port int) {
 	http.HandleFunc("/settings", handler.ServeSettingsPage)
 
 	// Static File Handlers
+	http.HandleFunc("/i18n.js", handler.ServeStaticFile)
 	http.HandleFunc("/functions.js", handler.ServeStaticFile)
+	http.HandleFunc("/locales/", handler.ServeStaticFile)
 	http.HandleFunc("/manifest.json", handler.ServeStaticFile)
 	http.HandleFunc("/sw.js", handler.ServeStaticFile)
 	http.HandleFunc("/pwa/", handler.ServeStaticFile)
