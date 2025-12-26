@@ -784,6 +784,7 @@
         // --- Initialization ---
         async function initialize() {
             await initI18n();
+            document.getElementById('languageSelect').value = currentLanguage;
             try {
                 const [configResponse, expensesResponse, recurringExpensesResponse] = await Promise.all([
                     fetch('/config'),
@@ -846,11 +847,14 @@
 
         // --- Language Settings ---
         const languageSelect = document.getElementById('languageSelect');
-        languageSelect.value = currentLanguage;
         languageSelect.addEventListener('change', async (e) => {
             const selectedLanguage = e.target.value;
-            await setLanguage(selectedLanguage);
-            showMessage('languageMessage', t('settings.language_updated', 'Language updated successfully.'), true);
+            const success = await setLanguage(selectedLanguage);
+            if (success) {
+                showMessage('languageMessage', t('settings.language_updated', 'Language updated successfully.'), true);
+            } else {
+                showMessage('languageMessage', 'Failed to update language.', false);
+            }
         });
 
         // --- Event Listeners ---

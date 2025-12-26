@@ -203,6 +203,27 @@ func (s *databaseStore) UpdateStartDate(startDate int) error {
 	})
 }
 
+func (s *databaseStore) GetLanguage() (string, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return "", err
+	}
+	if config.Language == "" {
+		return "en", nil
+	}
+	return config.Language, nil
+}
+
+func (s *databaseStore) UpdateLanguage(language string) error {
+	if !slices.Contains(SupportedLanguages, language) {
+		return fmt.Errorf("invalid language: %s", language)
+	}
+	return s.updateConfig(func(c *Config) error {
+		c.Language = language
+		return nil
+	})
+}
+
 func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {
 	var expense Expense
 	var tagsStr sql.NullString

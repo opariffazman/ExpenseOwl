@@ -22,6 +22,8 @@ type Storage interface {
 	UpdateCurrency(currency string) error
 	GetStartDate() (int, error)
 	UpdateStartDate(startDate int) error
+	GetLanguage() (string, error)
+	UpdateLanguage(language string) error
 
 	// Recurring Expenses
 	GetRecurringExpenses() ([]RecurringExpense, error)
@@ -49,6 +51,7 @@ type Config struct {
 	Categories        []string           `json:"categories"`
 	Currency          string             `json:"currency"`
 	StartDate         int                `json:"startDate"`
+	Language          string             `json:"language"`
 	RecurringExpenses []RecurringExpense `json:"recurringExpenses"`
 	// Tags              []string           `json:"tags"`
 }
@@ -97,6 +100,7 @@ func (c *Config) SetBaseConfig() {
 	c.Categories = defaultCategories
 	c.Currency = "usd"
 	c.StartDate = 1
+	c.Language = "en"
 	// c.Tags = []string{}
 	c.RecurringExpenses = []RecurringExpense{}
 }
@@ -245,6 +249,11 @@ var defaultCategories = []string{
 	"Shopping",
 	"Miscellaneous",
 	"Income",
+}
+
+var SupportedLanguages = []string{
+	"en", // English
+	"ms", // Bahasa Malaysia
 }
 
 var SupportedCurrencies = []string{

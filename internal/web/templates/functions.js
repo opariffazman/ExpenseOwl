@@ -166,7 +166,19 @@ function escapeHTML(str) {
 
 // --- Internationalization (i18n) ---
 let translations = {};
-let currentLanguage = localStorage.getItem('language') || 'en';
+let currentLanguage = 'en';
+
+async function fetchLanguage() {
+    try {
+        const response = await fetch('/language');
+        if (response.ok) {
+            currentLanguage = await response.json();
+        }
+    } catch (error) {
+        console.error('Failed to fetch language:', error);
+        currentLanguage = 'en';
+    }
+}
 
 async function loadTranslations(lang) {
     if (lang === 'en') {
@@ -224,16 +236,29 @@ function applyTranslations() {
 }
 
 async function initI18n() {
+    await fetchLanguage();
     await loadTranslations(currentLanguage);
     applyTranslations();
 }
 
 async function setLanguage(lang) {
-    currentLanguage = lang;
-    localStorage.setItem('language', lang);
-    await loadTranslations(lang);
-    applyTranslations();
-    if (typeof updateMonthDisplay === 'function') {
-        updateMonthDisplay();
+    try {
+        const response = await fetch('/language/edit', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lang)
+        });
+        if (response.ok) {
+            currentLanguage = lang;
+            await loadTranslations(lang);
+            applyTranslations();
+            if (typeof updateMonthDisplay === 'function') {
+                updateMonthDisplay();
+            }
+            return true;
+        }
+    } catch (error) {
+        console.error('Failed to save language:', error);
     }
+    return false;
 }

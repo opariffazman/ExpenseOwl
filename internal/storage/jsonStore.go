@@ -197,6 +197,32 @@ func (s *jsonStore) UpdateStartDate(startDate int) error {
 	return s.writeConfigFile(s.configPath, data)
 }
 
+func (s *jsonStore) GetLanguage() (string, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return "", err
+	}
+	if config.Language == "" {
+		return "en", nil
+	}
+	return config.Language, nil
+}
+
+func (s *jsonStore) UpdateLanguage(language string) error {
+	if !slices.Contains(SupportedLanguages, language) {
+		return fmt.Errorf("invalid language: %s", language)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	data, err := s.readConfigFile(s.configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %v", err)
+	}
+	data.Language = language
+	s.defaults["language"] = language
+	return s.writeConfigFile(s.configPath, data)
+}
+
 func (s *jsonStore) GetRecurringExpenses() ([]RecurringExpense, error) {
 	config, err := s.GetConfig()
 	if err != nil {

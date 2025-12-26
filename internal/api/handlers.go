@@ -162,6 +162,38 @@ func (h *Handler) UpdateStartDate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
+func (h *Handler) GetLanguage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	language, err := h.storage.GetLanguage()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to get language"})
+		log.Printf("API ERROR: Failed to get language: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, language)
+}
+
+func (h *Handler) UpdateLanguage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	var language string
+	if err := json.NewDecoder(r.Body).Decode(&language); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+	if err := h.storage.UpdateLanguage(language); err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		log.Printf("API ERROR: Failed to update language: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
 // ------------------------------------------------------------
 // Expense Handlers
 // ------------------------------------------------------------
