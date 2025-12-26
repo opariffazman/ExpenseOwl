@@ -894,8 +894,10 @@
                 createTagInput('tags-input', 'selected-tags', 'tags-dropdown', addFormSelectedTags);
                 fetch('/version').then(r => r.ok ? r.text() : 'dev').then(version => {
                     const link = document.getElementById('version-link');
-                    link.textContent = version;
-                    if (version !== 'dev') link.href = `https://github.com/tanq16/expenseowl/releases/tag/${version}`;
+                    if (link) {
+                        link.textContent = version;
+                        if (version !== 'dev') link.href = `https://github.com/tanq16/expenseowl/releases/tag/${version}`;
+                    }
                 }).catch(e => console.error('Failed to fetch version:', e));
 
             } catch (error) {
@@ -942,7 +944,10 @@
         document.getElementById('saveCurrency').addEventListener('click', saveCurrency);
         document.getElementById('saveStartDate').addEventListener('click', saveStartDate);
         document.getElementById('csv-import-file').addEventListener('change', handleCsvImport);
-        document.getElementById('csv-import-file-old').addEventListener('change', handleCsvImportOld);
+        const csvImportOld = document.getElementById('csv-import-file-old');
+        if (csvImportOld) {
+            csvImportOld.addEventListener('change', handleCsvImportOld);
+        }
         document.getElementById('newCategory').addEventListener('keypress', e => e.key === 'Enter' && addCategory());
 
         document.getElementById('recurringExpenseForm').addEventListener('submit', async (e) => {
