@@ -294,11 +294,23 @@
                 item.innerHTML = `
                     <div class="category-handle-area">
                         <span class="drag-handle"><i class="fa-solid fa-grip-lines"></i></span>
-                        <span>${category}</span>
+                        <span class="category-name" id="category-name-${index}">${category}</span>
+                        <input type="text" class="category-rename-input" id="category-input-${index}" value="${category}" style="display:none;">
                     </div>
-                    <button class="delete-button" onclick="removeCategory(${index})">
-                        <i class="fa-solid fa-times"></i>
-                    </button>
+                    <div class="category-actions">
+                        <button class="edit-button" id="edit-btn-${index}" onclick="startRenameCategory(${index})" data-tooltip="Rename">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="save-rename-button" id="save-btn-${index}" onclick="saveRenameCategory(${index})" style="display:none;" data-tooltip="Save">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button class="cancel-rename-button" id="cancel-btn-${index}" onclick="cancelRenameCategory(${index})" style="display:none;" data-tooltip="Cancel">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                        <button class="delete-button" id="delete-btn-${index}" onclick="removeCategory(${index})" data-tooltip="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 `;
                 item.addEventListener('dragstart', handleDragStart);
                 item.addEventListener('dragover', handleDragOver);
@@ -382,6 +394,85 @@
         function removeCategory(index) {
             categories.splice(index, 1);
             renderCategories();
+        }
+
+        function startRenameCategory(index) {
+            const nameSpan = document.getElementById(`category-name-${index}`);
+            const input = document.getElementById(`category-input-${index}`);
+            const editBtn = document.getElementById(`edit-btn-${index}`);
+            const saveBtn = document.getElementById(`save-btn-${index}`);
+            const cancelBtn = document.getElementById(`cancel-btn-${index}`);
+            const deleteBtn = document.getElementById(`delete-btn-${index}`);
+
+            nameSpan.style.display = 'none';
+            input.style.display = 'inline-block';
+            input.focus();
+            input.select();
+
+            editBtn.style.display = 'none';
+            deleteBtn.style.display = 'none';
+            saveBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'inline-block';
+        }
+
+        function cancelRenameCategory(index) {
+            const nameSpan = document.getElementById(`category-name-${index}`);
+            const input = document.getElementById(`category-input-${index}`);
+            const editBtn = document.getElementById(`edit-btn-${index}`);
+            const saveBtn = document.getElementById(`save-btn-${index}`);
+            const cancelBtn = document.getElementById(`cancel-btn-${index}`);
+            const deleteBtn = document.getElementById(`delete-btn-${index}`);
+
+            input.value = categories[index];
+            nameSpan.style.display = 'inline';
+            input.style.display = 'none';
+
+            editBtn.style.display = 'inline-block';
+            deleteBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+        }
+
+        async function saveRenameCategory(index) {
+            const input = document.getElementById(`category-input-${index}`);
+            let newName = input.value.trim();
+            newName = newName.replace(/[<>]/g, ' ').trim();
+            const oldName = categories[index];
+
+            if (!newName) {
+                showMessage('categoriesMessage', 'Category name cannot be empty', false);
+                return;
+            }
+
+            if (newName === oldName) {
+                cancelRenameCategory(index);
+                return;
+            }
+
+            if (categories.includes(newName)) {
+                showMessage('categoriesMessage', 'Category name already exists', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/categories/rename', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ oldName, newName })
+                });
+
+                if (response.ok) {
+                    categories[index] = newName;
+                    renderCategories();
+                    showMessage('categoriesMessage', 'Category renamed successfully', true);
+                } else {
+                    const error = await response.json();
+                    showMessage('categoriesMessage', `Failed to rename category: ${error.error}`, false);
+                }
+            } catch (error) {
+                console.error('Error renaming category:', error);
+                showMessage('categoriesMessage', 'Error renaming category', false);
+            }
         }
 
         async function saveCategories() {
