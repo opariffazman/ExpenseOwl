@@ -83,18 +83,31 @@
 
         <div class="settings-container">
             <div class="form-container half-width">
-                <h2 align="center">Theme Settings</h2>
+                <h2 align="center" data-i18n="settings.theme_settings">Theme Settings</h2>
                 <div class="theme-selector">
                     <select id="themeSelect">
-                        <option value="system">System Default</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+                        <option value="system" data-i18n="theme.system">System Default</option>
+                        <option value="light" data-i18n="theme.light">Light</option>
+                        <option value="dark" data-i18n="theme.dark">Dark</option>
                     </select>
                 </div>
                 <div id="themeMessage" class="form-message"></div>
             </div>
             <div class="form-container half-width">
-                <h2 align="center">Import/Export Data</h2>
+                <h2 align="center" data-i18n="settings.language_settings">Language Settings</h2>
+                <div class="language-selector">
+                    <select id="languageSelect">
+                        <option value="en">English</option>
+                        <option value="ms">Bahasa Malaysia</option>
+                    </select>
+                </div>
+                <div id="languageMessage" class="form-message"></div>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            <div class="form-container half-width">
+                <h2 align="center" data-i18n="settings.import_export">Import/Export Data</h2>
                 <div class="export-buttons">
                     <div class="export-options">
                         <a href="/export/csv" id="csv-export-file" class="nav-button" download="expenses.csv" data-i18n="settings.export_csv">Export to CSV</a>
@@ -770,6 +783,7 @@
 
         // --- Initialization ---
         async function initialize() {
+            await initI18n();
             try {
                 const [configResponse, expensesResponse, recurringExpensesResponse] = await Promise.all([
                     fetch('/config'),
@@ -827,7 +841,16 @@
             const selectedTheme = e.target.value;
             localStorage.setItem('theme', selectedTheme);
             applyTheme(selectedTheme);
-            showMessage('themeMessage', 'Theme updated successfully.', true);
+            showMessage('themeMessage', t('settings.theme_updated', 'Theme updated successfully.'), true);
+        });
+
+        // --- Language Settings ---
+        const languageSelect = document.getElementById('languageSelect');
+        languageSelect.value = currentLanguage;
+        languageSelect.addEventListener('change', async (e) => {
+            const selectedLanguage = e.target.value;
+            await setLanguage(selectedLanguage);
+            showMessage('languageMessage', t('settings.language_updated', 'Language updated successfully.'), true);
         });
 
         // --- Event Listeners ---

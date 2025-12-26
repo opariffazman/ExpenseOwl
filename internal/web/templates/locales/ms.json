@@ -25,6 +25,7 @@
   "dashboard": {
     "title": "Papan Pemuka ExpenseOwl",
     "add_expense": "Tambah Perbelanjaan",
+    "add_gains": "Tambah Keuntungan",
     "no_data": "Tiada perbelanjaan direkodkan bulan ini.",
     "income": "Pendapatan",
     "expenses": "Perbelanjaan",
@@ -36,6 +37,8 @@
     "tags_placeholder": "(pilihan)",
     "expense_added": "Perbelanjaan berjaya ditambah!",
     "expense_updated": "Perbelanjaan berjaya dikemas kini!",
+    "gain_added": "Keuntungan berjaya ditambah!",
+    "gain_updated": "Keuntungan berjaya dikemas kini!",
     "error_add": "Ralat: Gagal menambah perbelanjaan",
     "error_update": "Ralat: Gagal menyimpan perbelanjaan",
     "error_delete": "Ralat: Gagal memadam perbelanjaan"
@@ -46,7 +49,10 @@
     "no_transactions": "Tiada transaksi dijumpai",
     "no_expenses_month": "Tiada perbelanjaan direkodkan untuk bulan ini",
     "update_expense": "Kemas Kini Perbelanjaan",
-    "add_expense": "Tambah Perbelanjaan"
+    "update_gain": "Kemas Kini Keuntungan",
+    "add_expense": "Tambah Perbelanjaan",
+    "add_gain": "Tambah Keuntungan",
+    "failed_load": "Gagal memuatkan perbelanjaan"
   },
   "settings": {
     "title": "Tetapan ExpenseOwl",

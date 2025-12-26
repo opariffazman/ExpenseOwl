@@ -575,14 +575,14 @@ header {
     margin: 0 0.5rem;
 }
 
-.currency-selector, .start-date-manager, .theme-selector {
+.currency-selector, .start-date-manager, .theme-selector, .language-selector {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin: 1rem 0;
 }
 
-.start-date-manager input, .currency-selector select, .theme-selector select {
+.start-date-manager input, .currency-selector select, .theme-selector select, .language-selector select {
     flex: 1;
     padding: 0.5rem;
     border: 1px solid var(--border);

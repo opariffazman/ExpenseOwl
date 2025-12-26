@@ -61,7 +61,18 @@ function getUserTimeZone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
+const monthKeys = ['january', 'february', 'march', 'april', 'may', 'june',
+                   'july', 'august', 'september', 'october', 'november', 'december'];
+
 function formatMonth(date) {
+    const year = date.getFullYear();
+    const monthIndex = date.getMonth();
+    const monthKey = monthKeys[monthIndex];
+    const translatedMonth = t(`months.${monthKey}`, '');
+
+    if (translatedMonth) {
+        return `${translatedMonth} ${year}`;
+    }
     return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -151,4 +162,78 @@ function escapeHTML(str) {
             '"': '&quot;'
         }[tag] || tag)
     );
+}
+
+// --- Internationalization (i18n) ---
+let translations = {};
+let currentLanguage = localStorage.getItem('language') || 'en';
+
+async function loadTranslations(lang) {
+    if (lang === 'en') {
+        translations = {};
+        return;
+    }
+    try {
+        const response = await fetch(`/locales/${lang}.json`);
+        if (response.ok) {
+            translations = await response.json();
+        }
+    } catch (error) {
+        console.error('Failed to load translations:', error);
+        translations = {};
+    }
+}
+
+function t(key, fallback = '') {
+    const keys = key.split('.');
+    let value = translations;
+    for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+            value = value[k];
+        } else {
+            return fallback || key;
+        }
+    }
+    return typeof value === 'string' ? value : (fallback || key);
+}
+
+function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translated = t(key, el.textContent);
+        if (translated !== key) {
+            el.textContent = translated;
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const translated = t(key, el.placeholder);
+        if (translated !== key) {
+            el.placeholder = translated;
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-tooltip]').forEach(el => {
+        const key = el.getAttribute('data-i18n-tooltip');
+        const translated = t(key, el.getAttribute('data-tooltip'));
+        if (translated !== key) {
+            el.setAttribute('data-tooltip', translated);
+        }
+    });
+}
+
+async function initI18n() {
+    await loadTranslations(currentLanguage);
+    applyTranslations();
+}
+
+async function setLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('language', lang);
+    await loadTranslations(lang);
+    applyTranslations();
+    if (typeof updateMonthDisplay === 'function') {
+        updateMonthDisplay();
+    }
 }
