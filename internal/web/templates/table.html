@@ -135,11 +135,11 @@
             if (isGain) {
                 gainBtn.classList.add('active');
                 expenseBtn.classList.remove('active');
-                submitBtn.textContent = isEditing ? 'Update Gain' : 'Add Gain';
+                submitBtn.textContent = isEditing ? t('table.update_gain', 'Update Gain') : t('table.add_gain', 'Add Gain');
             } else {
                 expenseBtn.classList.add('active');
                 gainBtn.classList.remove('active');
-                submitBtn.textContent = isEditing ? 'Update Expense' : 'Add Expense';
+                submitBtn.textContent = isEditing ? t('table.update_expense', 'Update Expense') : t('table.add_expense', 'Add Expense');
             }
         }
 
@@ -154,9 +154,9 @@
 
         function createTable(expenses) {
             if (!expenses || expenses.length === 0) {
-                const message = document.getElementById('showAllToggle').checked ? 
-                                'No transactions found' : 
-                                'No expenses recorded for this month';
+                const message = document.getElementById('showAllToggle').checked ?
+                                t('table.no_transactions', 'No transactions found') :
+                                t('table.no_expenses_month', 'No expenses recorded for this month');
                 return `<div class="no-data">${message}</div>`;
             }
             const hasTags = expenses.some(exp => exp.tags && exp.tags.length > 0);
@@ -164,11 +164,11 @@
                 <table class="expense-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Category</th>
-                            ${hasTags ? '<th class="tags-column">Tags</th>' : ''}
-                            <th>Amount</th>
-                            <th class="date-header">Date</th>
+                            <th>${t('common.name', 'Name')}</th>
+                            <th>${t('common.category', 'Category')}</th>
+                            ${hasTags ? `<th class="tags-column">${t('common.tags', 'Tags')}</th>` : ''}
+                            <th>${t('common.amount', 'Amount')}</th>
+                            <th class="date-header">${t('common.date', 'Date')}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -290,9 +290,10 @@
                 dropdown.innerHTML = '';
                 const filteredTags = [...allTags].filter(tag => tag.toLowerCase().includes(value) && !selectedTags.has(tag));
                 
-                if(value && ![...allTags].map(t => t.toLowerCase()).includes(value)) {
+                if(value && ![...allTags].map(tag => tag.toLowerCase()).includes(value)) {
                     const newItem = document.createElement('div');
-                    newItem.textContent = `+ Create "${input.value.trim()}"`;
+                    const createText = t('tags_create', '+ Create "{tag}"').replace('{tag}', input.value.trim());
+                    newItem.textContent = createText;
                     newItem.className = 'new-tag';
                     newItem.onclick = () => addTag(input.value.trim());
                     dropdown.appendChild(newItem);
@@ -358,8 +359,8 @@
                 setupTagInput();
             } catch (error) {
                 console.error('Failed to initialize table:', error);
-                document.getElementById('tableContainer').innerHTML = 
-                    '<div class="no-data">Failed to load expenses</div>';
+                document.getElementById('tableContainer').innerHTML =
+                    `<div class="no-data">${t('table.failed_load', 'Failed to load expenses')}</div>`;
             }
         }
 
@@ -446,8 +447,11 @@
                 });
                 const messageDiv = document.getElementById('formMessage');
                 if (response.ok) {
-                    const typeLabel = isAddingGain ? 'Gain' : 'Expense';
-                    messageDiv.textContent = editId ? `${typeLabel} updated successfully!` : `${typeLabel} added successfully!`;
+                    if (editId) {
+                        messageDiv.textContent = isAddingGain ? t('form.gain_updated', 'Gain updated successfully!') : t('form.expense_updated', 'Expense updated successfully!');
+                    } else {
+                        messageDiv.textContent = isAddingGain ? t('form.gain_added', 'Gain added successfully!') : t('form.expense_added', 'Expense added successfully!');
+                    }
                     messageDiv.className = 'form-message success';
                     form.reset();
                     document.getElementById('selected-tags').innerHTML = '';
@@ -462,7 +466,7 @@
                     document.getElementById('date').value = `${year}-${month}-${day}`;
                 } else {
                     const error = await response.json();
-                    messageDiv.textContent = `Error: ${error.error || 'Failed to save expense'}`;
+                    messageDiv.textContent = error.error || t('form.error_update', 'Error: Failed to save expense');
                     messageDiv.className = 'form-message error';
                 }
                 setTimeout(() => {
@@ -472,7 +476,7 @@
             } catch (error) {
                 console.error('Error saving expense:', error);
                 const messageDiv = document.getElementById('formMessage');
-                messageDiv.textContent = 'Error: Failed to save expense';
+                messageDiv.textContent = t('form.error_update', 'Error: Failed to save expense');
                 messageDiv.className = 'form-message error';
             }
         });

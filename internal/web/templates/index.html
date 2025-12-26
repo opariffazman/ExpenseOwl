@@ -310,7 +310,7 @@
             const totalsHtml = `
                 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Total:</span>
+                        <span>${t('dashboard.total', 'Total:')}</span>
                         <span class="amount">
                             ${formatCurrency(activeTotalExpenses)}
                         </span>
@@ -415,9 +415,10 @@
                 dropdown.innerHTML = '';
                 const filteredTags = [...allTags].filter(tag => tag.toLowerCase().includes(value) && !selectedTags.has(tag));
                 
-                if (value && ![...allTags].map(t => t.toLowerCase()).includes(value)) {
+                if (value && ![...allTags].map(tag => tag.toLowerCase()).includes(value)) {
                     const newItem = document.createElement('div');
-                    newItem.textContent = `+ Create "${input.value.trim()}"`;
+                    const createText = t('tags_create', '+ Create "{tag}"').replace('{tag}', input.value.trim());
+                    newItem.textContent = createText;
                     newItem.className = 'new-tag';
                     newItem.onclick = () => addTag(input.value.trim());
                     dropdown.appendChild(newItem);
@@ -472,22 +473,26 @@
             const isHidden = formContainer.style.display === 'none' || formContainer.style.display === '';
             const switchingMode = !isHidden && isAddingGain !== isGain;
 
+            const addExpenseText = t('dashboard.add_expense', 'Add Expense');
+            const addGainsText = t('dashboard.add_gains', 'Add Gains');
+            const closeText = t('common.close', 'Close');
+
             if (isHidden || switchingMode) {
                 formContainer.style.display = 'block';
                 isAddingGain = isGain;
                 if (isGain) {
-                    gainBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close';
-                    expenseBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
-                    submitBtn.textContent = 'Add Gain';
+                    gainBtn.innerHTML = `<i class="fa-solid fa-times"></i> ${closeText}`;
+                    expenseBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addExpenseText}`;
+                    submitBtn.textContent = t('table.add_gain', 'Add Gain');
                 } else {
-                    expenseBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close';
-                    gainBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Gains';
-                    submitBtn.textContent = 'Add Expense';
+                    expenseBtn.innerHTML = `<i class="fa-solid fa-times"></i> ${closeText}`;
+                    gainBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addGainsText}`;
+                    submitBtn.textContent = addExpenseText;
                 }
             } else {
                 formContainer.style.display = 'none';
-                expenseBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
-                gainBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Gains';
+                expenseBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addExpenseText}`;
+                gainBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addGainsText}`;
             }
         }
 
@@ -515,7 +520,7 @@
                 });
                 const messageDiv = document.getElementById('formMessage');
                 if (response.ok) {
-                    messageDiv.textContent = isAddingGain ? 'Gain added successfully!' : 'Expense added successfully!';
+                    messageDiv.textContent = isAddingGain ? t('form.gain_added', 'Gain added successfully!') : t('form.expense_added', 'Expense added successfully!');
                     messageDiv.className = 'form-message success';
                     document.getElementById('expenseForm').reset();
                     document.getElementById('selected-tags').innerHTML = '';
@@ -528,7 +533,7 @@
                     document.getElementById('date').value = `${year}-${month}-${day}`;
                 } else {
                     const error = await response.json();
-                    messageDiv.textContent = `Error: ${error.error || 'Failed to add expense'}`;
+                    messageDiv.textContent = error.error || t('form.error_add', 'Error: Failed to add expense');
                     messageDiv.className = 'form-message error';
                 }
                 setTimeout(() => {
@@ -538,7 +543,7 @@
             } catch (error) {
                 console.error('Error adding expense:', error);
                 const messageDiv = document.getElementById('formMessage');
-                messageDiv.textContent = 'Error: Failed to add expense';
+                messageDiv.textContent = t('form.error_add', 'Error: Failed to add expense');
                 messageDiv.className = 'form-message error';
             }
         });
