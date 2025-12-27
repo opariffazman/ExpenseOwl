@@ -32,39 +32,6 @@
         .expense-section h2 {
             color: #dc3545;
         }
-        .monthly-summary-box {
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 20px;
-            margin: 30px 0;
-            border: 1px solid var(--border-color);
-        }
-        .monthly-summary-box h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .summary-row:last-child {
-            border-bottom: none;
-        }
-        .summary-label {
-            font-weight: 500;
-        }
-        .summary-value {
-            font-weight: 600;
-        }
-        .summary-value.positive {
-            color: #28a745;
-        }
-        .summary-value.negative {
-            color: #dc3545;
-        }
         .no-data {
             text-align: center;
             padding: 40px;
@@ -86,12 +53,17 @@
             content: ' ▼';
             font-size: 0.8em;
         }
+        .expense-table td.amount,
+        .expense-table th:last-child,
+        .expense-table tfoot td:last-child {
+            text-align: right;
+        }
+        .expense-table tfoot td {
+            font-weight: bold;
+        }
         @media (max-width: 768px) {
-            .monthly-summary-box {
-                padding: 15px;
-            }
-            .summary-row {
-                font-size: 0.9em;
+            .summary-section {
+                margin: 15px 0;
             }
         }
     </style>
@@ -126,11 +98,6 @@
             <button id="nextMonth" class="nav-button"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
 
-        <div class="monthly-summary-box">
-            <h2 data-i18n="summary.monthly_summary">Monthly Summary</h2>
-            <div id="summaryStats"></div>
-        </div>
-
         <div class="summary-section expense-section">
             <h2><i class="fa-solid fa-arrow-down"></i> <span data-i18n="summary.expense_breakdown">Expense Breakdown</span></h2>
             <div id="expenseTableContainer"></div>
@@ -148,7 +115,7 @@
         let currentDate = new Date();
         let allExpenses = [];
         let startDate = 1;
-        let sortColumn = 'amount';
+        let sortColumn = 'total';
         let sortAscending = false;
 
         function calculateCategorySummary(expenses) {
@@ -241,9 +208,6 @@
                         <tr>
                             <th onclick="handleSort('category')" class="${sortColumn === 'category' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.category', 'Category')}</th>
                             <th onclick="handleSort('total')" class="${sortColumn === 'total' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.amount', 'Amount')}</th>
-                            <th onclick="handleSort('percentage')" class="${sortColumn === 'percentage' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.percentage', '% of Total')}</th>
-                            <th onclick="handleSort('count')" class="${sortColumn === 'count' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.count', 'Count')}</th>
-                            <th onclick="handleSort('average')" class="${sortColumn === 'average' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.average', 'Avg/Transaction')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -251,9 +215,6 @@
                             <tr>
                                 <td>${escapeHTML(row.category)}</td>
                                 <td class="amount">${formatCurrency(row.total)}</td>
-                                <td>${row.percentage.toFixed(1)}%</td>
-                                <td>${row.count}</td>
-                                <td class="amount">${formatCurrency(row.average)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -261,38 +222,9 @@
                         <tr style="font-weight: bold;">
                             <td>${totalLabel}</td>
                             <td class="amount">${formatCurrency(total)}</td>
-                            <td>100%</td>
-                            <td>${sortedData.reduce((sum, row) => sum + row.count, 0)}</td>
-                            <td>-</td>
                         </tr>
                     </tfoot>
                 </table>
-            `;
-        }
-
-        function renderSummaryStats(summary) {
-            const balanceClass = summary.netBalance >= 0 ? 'positive' : 'negative';
-            const balanceSign = summary.netBalance >= 0 ? '+' : '';
-
-            return `
-                <div class="summary-row">
-                    <span class="summary-label">${t('summary.total_income_label', 'Total Income:')}</span>
-                    <span class="summary-value positive">${formatCurrency(summary.totalIncome)}</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-label">${t('summary.total_expenses_label', 'Total Expenses:')}</span>
-                    <span class="summary-value negative">${formatCurrency(summary.totalExpenses)}</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-label">${t('summary.net_balance', 'Net Balance:')}</span>
-                    <span class="summary-value ${balanceClass}">${balanceSign}${formatCurrency(summary.netBalance)}</span>
-                </div>
-                ${summary.totalIncome > 0 ? `
-                <div class="summary-row">
-                    <span class="summary-label">${t('summary.savings_rate', 'Savings Rate:')}</span>
-                    <span class="summary-value ${balanceClass}">${summary.savingsRate.toFixed(1)}%</span>
-                </div>
-                ` : ''}
             `;
         }
 
@@ -310,7 +242,6 @@
             const monthExpenses = getMonthExpenses(allExpenses);
             const summary = calculateCategorySummary(monthExpenses);
 
-            document.getElementById('summaryStats').innerHTML = renderSummaryStats(summary);
             document.getElementById('expenseTableContainer').innerHTML = createSummaryTable(summary.expenseData, 'expenses');
             document.getElementById('incomeTableContainer').innerHTML = createSummaryTable(summary.incomeData, 'income');
         }
@@ -334,8 +265,9 @@
                 updateSummary();
             } catch (error) {
                 console.error('Failed to initialize summary:', error);
-                document.getElementById('summaryStats').innerHTML =
-                    `<div class="no-data">${t('messages.failed_load', 'Failed to load summary data')}</div>`;
+                const errorMsg = `<div class="no-data">${t('messages.failed_load', 'Failed to load summary data')}</div>`;
+                document.getElementById('expenseTableContainer').innerHTML = errorMsg;
+                document.getElementById('incomeTableContainer').innerHTML = errorMsg;
             }
         }
 
