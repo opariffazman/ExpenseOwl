@@ -30,8 +30,8 @@
     "title": "Papan Pemuka",
     "add_expense": "Tambah Pengeluaran",
     "add_gains": "Tambah Penerimaan",
-    "no_data": "Tiada perbelanjaan direkodkan bulan ini.",
-    "income": "Pendapatan",
+    "no_data": "Tiada pengeluaran direkodkan bulan ini.",
+    "income": "Penerimaan",
     "expenses": "Pengeluaran",
     "balance": "Baki",
     "total": "Jumlah:",
@@ -43,27 +43,27 @@
     "expense_updated": "Pengeluaran berjaya dikemas kini!",
     "gain_added": "Penerimaan berjaya ditambah!",
     "gain_updated": "Penerimaan berjaya dikemas kini!",
-    "error_add": "Ralat: Gagal menambah perbelanjaan",
-    "error_update": "Ralat: Gagal menyimpan perbelanjaan",
-    "error_delete": "Ralat: Gagal memadam perbelanjaan"
+    "error_add": "Ralat: Gagal menambah pengeluaran",
+    "error_update": "Ralat: Gagal menyimpan pengeluaran",
+    "error_delete": "Ralat: Gagal memadam pengeluaran"
   },
   "table": {
     "title": "Jadual",
     "show_all": "Tunjuk Semua Transaksi",
     "no_transactions": "Tiada transaksi dijumpai",
-    "no_expenses_month": "Tiada perbelanjaan direkodkan untuk bulan ini",
+    "no_expenses_month": "Tiada pengeluaran direkodkan untuk bulan ini",
     "update_expense": "Kemas Kini Pengeluaran",
     "update_gain": "Kemas Kini Penerimaan",
     "add_expense": "Tambah Pengeluaran",
     "add_gain": "Tambah Penerimaan",
-    "failed_load": "Gagal memuatkan perbelanjaan"
+    "failed_load": "Gagal memuatkan pengeluaran"
   },
   "summary": {
     "monthly_summary": "Ringkasan Bulanan",
-    "expense_breakdown": "Pecahan Perbelanjaan",
-    "income_breakdown": "Pecahan Pendapatan",
-    "total_income_label": "Jumlah Pendapatan:",
-    "total_expenses_label": "Jumlah Perbelanjaan:",
+    "expense_breakdown": "Pecahan Pengeluaran",
+    "income_breakdown": "Pecahan Penerimaan",
+    "total_income_label": "Jumlah Penerimaan:",
+    "total_expenses_label": "Jumlah Pengeluaran:",
     "net_balance": "Baki Bersih:",
     "savings_rate": "Kadar Simpanan:",
     "category": "Kategori",
@@ -71,9 +71,9 @@
     "percentage": "% daripada Jumlah",
     "count": "Kiraan",
     "average": "Purata/Transaksi",
-    "total_expenses": "JUMLAH PERBELANJAAN",
-    "total_income": "JUMLAH PENDAPATAN",
-    "no_expenses": "Tiada perbelanjaan direkodkan untuk bulan ini",
+    "total_expenses": "JUMLAH PENGELUARAN",
+    "total_income": "JUMLAH PENERIMAAN",
+    "no_expenses": "Tiada pengeluaran direkodkan untuk bulan ini",
     "no_income": "Tiada pendapatan direkodkan untuk bulan ini"
   },
   "settings": {
@@ -106,9 +106,9 @@
     "recurring_added": "Pengeluaran berulang berjaya ditambah!",
     "recurring_updated": "Pengeluaran berulang berjaya dikemas kini",
     "recurring_deleted": "Pengeluaran berulang berjaya dipadam",
-    "failed_add_recurring": "Gagal menambah perbelanjaan berulang",
-    "failed_update_recurring": "Gagal mengemas kini perbelanjaan berulang",
-    "failed_delete_recurring": "Gagal memadam perbelanjaan berulang",
+    "failed_add_recurring": "Gagal menambah pengeluaran berulang",
+    "failed_update_recurring": "Gagal mengemas kini pengeluaran berulang",
+    "failed_delete_recurring": "Gagal memadam pengeluaran berulang",
     "failed_save_categories": "Gagal menyimpan kategori",
     "failed_save_currency": "Gagal menyimpan mata wang",
     "failed_save_start_date": "Gagal menyimpan tarikh mula"
@@ -127,9 +127,9 @@
   },
   "modal": {
     "delete_expense": "Padam Pengeluaran",
-    "delete_confirm": "Adakah anda pasti mahu memadam perbelanjaan ini? (tidak boleh dibatalkan)",
+    "delete_confirm": "Adakah anda pasti mahu memadam pengeluaran ini? (tidak boleh dibatalkan)",
     "delete_recurring": "Padam Pengeluaran Berulang",
-    "delete_recurring_text": "Adakah anda mahu memadam semua kejadian perbelanjaan ini, atau hanya kejadian akan datang sahaja?",
+    "delete_recurring_text": "Adakah anda mahu memadam semua kejadian pengeluaran ini, atau hanya kejadian akan datang sahaja?",
     "delete_future": "Padam Akan Datang",
     "delete_all": "Padam Semua",
     "edit_recurring": "Kemas Kini Pengeluaran Berulang",
@@ -170,11 +170,11 @@
   "messages": {
     "failed_config": "Gagal mendapatkan konfigurasi",
     "failed_data": "Gagal mendapatkan data",
-    "failed_expenses": "Gagal memuatkan perbelanjaan",
-    "failed_recurring": "Gagal mendapatkan perbelanjaan berulang",
+    "failed_expenses": "Gagal memuatkan pengeluaran",
+    "failed_recurring": "Gagal mendapatkan pengeluaran berulang",
     "failed_settings": "Gagal memuatkan tetapan",
-    "no_recurring": "Tiada perbelanjaan berulang dijumpai.",
-    "error_loading_recurring": "Ralat memuatkan perbelanjaan berulang."
+    "no_recurring": "Tiada pengeluaran berulang dijumpai.",
+    "error_loading_recurring": "Ralat memuatkan pengeluaran berulang."
   },
   "tags_create": "+ Cipta \"{tag}\""
 }
