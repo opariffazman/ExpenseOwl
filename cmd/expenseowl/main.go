@@ -46,6 +46,7 @@ func runServer(port int) {
 	})
 	http.HandleFunc("/table", handler.ServeTableView)
 	http.HandleFunc("/settings", handler.ServeSettingsPage)
+	http.HandleFunc("/summary", handler.ServeSummaryPage)
 
 	// Static File Handlers
 	http.HandleFunc("/functions.js", handler.ServeStaticFile)

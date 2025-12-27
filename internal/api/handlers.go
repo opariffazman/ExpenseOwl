@@ -525,6 +525,17 @@ func (h *Handler) ServeSettingsPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) ServeSummaryPage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
+	if err := web.ServeTemplate(w, "summary.html"); err != nil {
+		http.Error(w, "Failed to serve template", http.StatusInternalServerError)
+	}
+}
+
 func (h *Handler) ServeStaticFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})

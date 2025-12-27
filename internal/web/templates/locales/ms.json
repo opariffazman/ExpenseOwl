@@ -4,6 +4,7 @@
   "navigation": {
     "dashboard": "Papan Pemuka",
     "table_view": "Paparan Jadual",
+    "summary": "Ringkasan",
     "settings": "Tetapan"
   },
   "common": {
@@ -56,6 +57,24 @@
     "add_expense": "Tambah Pengeluaran",
     "add_gain": "Tambah Penerimaan",
     "failed_load": "Gagal memuatkan perbelanjaan"
+  },
+  "summary": {
+    "monthly_summary": "Ringkasan Bulanan",
+    "expense_breakdown": "Pecahan Perbelanjaan",
+    "income_breakdown": "Pecahan Pendapatan",
+    "total_income_label": "Jumlah Pendapatan:",
+    "total_expenses_label": "Jumlah Perbelanjaan:",
+    "net_balance": "Baki Bersih:",
+    "savings_rate": "Kadar Simpanan:",
+    "category": "Kategori",
+    "amount": "Jumlah",
+    "percentage": "% daripada Jumlah",
+    "count": "Kiraan",
+    "average": "Purata/Transaksi",
+    "total_expenses": "JUMLAH PERBELANJAAN",
+    "total_income": "JUMLAH PENDAPATAN",
+    "no_expenses": "Tiada perbelanjaan direkodkan untuk bulan ini",
+    "no_income": "Tiada pendapatan direkodkan untuk bulan ini"
   },
   "settings": {
     "title": "Tetapan",
