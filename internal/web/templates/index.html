@@ -450,14 +450,6 @@
 
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            // Trigger HTML5 validation
-            const form = e.target;
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
             let amount = parseFloat(document.getElementById('amount').value);
             if (!isAddingGain) {
                 amount *= -1;

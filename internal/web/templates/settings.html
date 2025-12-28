@@ -690,14 +690,6 @@
 
         async function confirmRecurringUpdate(updateAll) {
             if (!recurringExpenseToEdit) return;
-
-            // Trigger HTML5 validation
-            const form = document.getElementById('editRecurringExpenseForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
             let amount = parseFloat(document.getElementById('editRecurringAmount').value);
             if (!document.getElementById('editRecurringReportGain').checked) {
                 amount *= -1;
@@ -949,14 +941,6 @@
 
         document.getElementById('recurringExpenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            // Trigger HTML5 validation
-            const form = e.target;
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
             const isGain = document.getElementById('recurringReportGain').checked;
             let amount = parseFloat(document.getElementById('recurringAmount').value);
             if (!isGain) amount *= -1;

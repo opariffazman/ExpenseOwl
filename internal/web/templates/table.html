@@ -388,13 +388,6 @@
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
-
-            // Trigger HTML5 validation
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
             const editId = form.dataset.editId;
             let amount = parseFloat(document.getElementById('amount').value);
             if (!isAddingGain) {
