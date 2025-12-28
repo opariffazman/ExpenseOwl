@@ -11,6 +11,7 @@ import (
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/image"
+	"github.com/johnfercher/maroto/v2/pkg/components/line"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
@@ -368,27 +369,42 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 
 	m := maroto.New(cfg)
 
-	// Load logo from embedded filesystem
+	// Load header logo from embedded filesystem
 	fs := web.GetTemplates()
-	logoBytes, err := fs.ReadFile("templates/pwa/icon-512.png")
+	logoBytes, err := fs.ReadFile("templates/pwa/header.png")
 	if err != nil {
-		log.Printf("Warning: Failed to load logo for receipt: %v\n", err)
+		log.Printf("Warning: Failed to load header logo for receipt: %v\n", err)
 	}
 
-	// Logo and Title header
+	// Header: Logo + Registration Number
 	if logoBytes != nil {
-		m.AddRow(25,
-			col.New(3), // Left spacing
-			col.New(6).Add(
+		m.AddRow(30,
+			col.New(12).Add(
 				image.NewFromBytes(logoBytes, extension.Png, props.Rect{
 					Center:  true,
-					Percent: 60,
+					Percent: 100,
 				}),
 			),
-			col.New(3), // Right spacing
 		)
-		m.AddRow(3) // Small spacing
+		m.AddRow(2) // Small spacing
 	}
+
+	// Registration number below header
+	m.AddRow(6,
+		text.NewCol(12, "(NO. PENDAFTARAN: PPM-008-14-14042009)",
+			props.Text{
+				Size:  8,
+				Align: align.Center,
+			}),
+	)
+
+	// Horizontal line separator after header
+	m.AddRow(5,
+		line.NewCol(12),
+	)
+
+	// Spacing
+	m.AddRow(3)
 
 	// Title
 	m.AddRow(12,
@@ -549,7 +565,33 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 	// Spacing
 	m.AddRow(10)
 
-	// Footer
+	// Horizontal line separator before footer
+	m.AddRow(5,
+		line.NewCol(12),
+	)
+
+	// Footer - PBAKTH Organization Details
+	m.AddRow(8,
+		text.NewCol(12, "PERTUBUHAN BEKAS ANGGOTA KUMPULAN TABUNG HAJI (PBAKTH)",
+			props.Text{
+				Size:  9,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+	)
+
+	m.AddRow(8,
+		text.NewCol(12, "TINGKAT 4, BANGUNAN TH SELBORN, JALAN TUN RAZAK, 50300 KUALA LUMPUR.",
+			props.Text{
+				Size:  8,
+				Align: align.Center,
+			}),
+	)
+
+	// Spacing
+	m.AddRow(5)
+
+	// Generation info
 	generatedByLabel := getLocalizedString(language, "receipt.generated_by")
 	generatedOnLabel := getLocalizedString(language, "receipt.generated_on")
 	currentTime := formatTimestampHuman(time.Now(), language)
@@ -592,27 +634,42 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 
 	m := maroto.New(cfg)
 
-	// Load logo from embedded filesystem
+	// Load header logo from embedded filesystem
 	fs := web.GetTemplates()
-	logoBytes, err := fs.ReadFile("templates/pwa/icon-512.png")
+	logoBytes, err := fs.ReadFile("templates/pwa/header.png")
 	if err != nil {
-		log.Printf("Warning: Failed to load logo for voucher: %v\n", err)
+		log.Printf("Warning: Failed to load header logo for voucher: %v\n", err)
 	}
 
-	// Logo and Title header
+	// Header: Logo + Registration Number
 	if logoBytes != nil {
-		m.AddRow(25,
-			col.New(3), // Left spacing
-			col.New(6).Add(
+		m.AddRow(30,
+			col.New(12).Add(
 				image.NewFromBytes(logoBytes, extension.Png, props.Rect{
 					Center:  true,
-					Percent: 60,
+					Percent: 100,
 				}),
 			),
-			col.New(3), // Right spacing
 		)
-		m.AddRow(3) // Small spacing
+		m.AddRow(2) // Small spacing
 	}
+
+	// Registration number below header
+	m.AddRow(6,
+		text.NewCol(12, "(NO. PENDAFTARAN: PPM-008-14-14042009)",
+			props.Text{
+				Size:  8,
+				Align: align.Center,
+			}),
+	)
+
+	// Horizontal line separator after header
+	m.AddRow(5,
+		line.NewCol(12),
+	)
+
+	// Spacing
+	m.AddRow(3)
 
 	// Title
 	m.AddRow(12,
@@ -773,7 +830,33 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 	// Spacing
 	m.AddRow(10)
 
-	// Footer
+	// Horizontal line separator before footer
+	m.AddRow(5,
+		line.NewCol(12),
+	)
+
+	// Footer - PBAKTH Organization Details
+	m.AddRow(8,
+		text.NewCol(12, "PERTUBUHAN BEKAS ANGGOTA KUMPULAN TABUNG HAJI (PBAKTH)",
+			props.Text{
+				Size:  9,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+	)
+
+	m.AddRow(8,
+		text.NewCol(12, "TINGKAT 4, BANGUNAN TH SELBORN, JALAN TUN RAZAK, 50300 KUALA LUMPUR.",
+			props.Text{
+				Size:  8,
+				Align: align.Center,
+			}),
+	)
+
+	// Spacing
+	m.AddRow(5)
+
+	// Generation info and internal use notice
 	forInternalLabel := getLocalizedString(language, "voucher.for_internal")
 	generatedOnLabel := getLocalizedString(language, "receipt.generated_on")
 	currentTime := formatTimestampHuman(time.Now(), language)
