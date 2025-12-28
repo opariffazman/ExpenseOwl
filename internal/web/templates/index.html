@@ -93,6 +93,14 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="note">
+                            <span data-i18n="common.note">Note</span>
+                            <span id="noteRequiredIndicator" style="color: #ff6b6b; display: none;"> *</span>
+                        </label>
+                        <input type="text" id="note">
+                    </div>
+
+                    <div class="form-group">
                         <label for="category" data-i18n="common.category">Category</label>
                         <select id="category" required>
                             <option value="" data-i18n="common.categories">categories</option>
@@ -419,8 +427,37 @@
         document.getElementById('toggleExpenseFormBtn').addEventListener('click', () => toggleForm(false));
         document.getElementById('toggleGainFormBtn').addEventListener('click', () => toggleForm(true));
 
+        // Handle note field required attribute based on payment method
+        function updateNoteRequirement(method) {
+            const noteInput = document.getElementById('note');
+            const noteIndicator = document.getElementById('noteRequiredIndicator');
+
+            if (method === 'transfer' || method === 'cheque') {
+                noteInput.required = true;
+                noteIndicator.style.display = 'inline';
+            } else {
+                noteInput.required = false;
+                noteIndicator.style.display = 'none';
+            }
+        }
+
+        document.getElementById('method').addEventListener('change', (e) => {
+            updateNoteRequirement(e.target.value);
+        });
+
+        // Initialize on page load
+        updateNoteRequirement(document.getElementById('method').value);
+
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Trigger HTML5 validation
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             let amount = parseFloat(document.getElementById('amount').value);
             if (!isAddingGain) {
                 amount *= -1;
@@ -430,6 +467,7 @@
                 from: document.getElementById('from').value,
                 to: document.getElementById('to').value,
                 method: document.getElementById('method').value,
+                note: document.getElementById('note').value,
                 category: document.getElementById('category').value,
                 amount: amount,
                 date: getISODateWithLocalTime(document.getElementById('date').value)

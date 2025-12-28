@@ -28,6 +28,7 @@ const (
 		"from" VARCHAR(255),
 		"to" VARCHAR(255),
 		method VARCHAR(50),
+		note TEXT,
 		category VARCHAR(255) NOT NULL,
 		amount NUMERIC(10, 2) NOT NULL,
 		currency VARCHAR(3) NOT NULL,
@@ -43,6 +44,7 @@ const (
 		"from" VARCHAR(255),
 		"to" VARCHAR(255),
 		method VARCHAR(50),
+		note TEXT,
 		category VARCHAR(255) NOT NULL,
 		start_date TIMESTAMPTZ NOT NULL,
 		interval VARCHAR(50) NOT NULL,
@@ -230,8 +232,8 @@ func (s *databaseStore) UpdateLanguage(language string) error {
 
 func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {
 	var expense Expense
-	var recurringID, fromStr, toStr, methodStr sql.NullString
-	err := scanner.Scan(&expense.ID, &recurringID, &expense.Description, &fromStr, &toStr, &methodStr, &expense.Category, &expense.Amount, &expense.Date)
+	var recurringID, fromStr, toStr, methodStr, noteStr sql.NullString
+	err := scanner.Scan(&expense.ID, &recurringID, &expense.Description, &fromStr, &toStr, &methodStr, &noteStr, &expense.Category, &expense.Amount, &expense.Date)
 	if err != nil {
 		return Expense{}, err
 	}
@@ -247,11 +249,14 @@ func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {
 	if methodStr.Valid {
 		expense.Method = methodStr.String
 	}
+	if noteStr.Valid {
+		expense.Note = noteStr.String
+	}
 	return expense, nil
 }
 
 func (s *databaseStore) GetAllExpenses() ([]Expense, error) {
-	query := `SELECT id, recurring_id, description, "from", "to", method, category, amount, date FROM expenses ORDER BY date DESC`
+	query := `SELECT id, recurring_id, description, "from", "to", method, note, category, amount, date FROM expenses ORDER BY date DESC`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query expenses: %v", err)
@@ -270,7 +275,7 @@ func (s *databaseStore) GetAllExpenses() ([]Expense, error) {
 }
 
 func (s *databaseStore) GetExpense(id string) (Expense, error) {
-	query := `SELECT id, recurring_id, description, "from", "to", method, category, amount, date FROM expenses WHERE id = $1`
+	query := `SELECT id, recurring_id, description, "from", "to", method, note, category, amount, date FROM expenses WHERE id = $1`
 	expense, err := scanExpense(s.db.QueryRow(query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -292,10 +297,10 @@ func (s *databaseStore) AddExpense(expense Expense) error {
 		expense.Date = time.Now()
 	}
 	query := `
-		INSERT INTO expenses (id, recurring_id, description, "from", "to", method, category, amount, currency, date)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO expenses (id, recurring_id, description, "from", "to", method, note, category, amount, currency, date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
-	_, err := s.db.Exec(query, expense.ID, expense.RecurringID, expense.Description, expense.From, expense.To, expense.Method, expense.Category, expense.Amount, expense.Currency, expense.Date)
+	_, err := s.db.Exec(query, expense.ID, expense.RecurringID, expense.Description, expense.From, expense.To, expense.Method, expense.Note, expense.Category, expense.Amount, expense.Currency, expense.Date)
 	return err
 }
 
@@ -306,10 +311,10 @@ func (s *databaseStore) UpdateExpense(id string, expense Expense) error {
 	}
 	query := `
 		UPDATE expenses
-		SET description = $1, "from" = $2, "to" = $3, method = $4, category = $5, amount = $6, currency = $7, date = $8, recurring_id = $9
-		WHERE id = $10
+		SET description = $1, "from" = $2, "to" = $3, method = $4, note = $5, category = $6, amount = $7, currency = $8, date = $9, recurring_id = $10
+		WHERE id = $11
 	`
-	result, err := s.db.Exec(query, expense.Description, expense.From, expense.To, expense.Method, expense.Category, expense.Amount, expense.Currency, expense.Date, expense.RecurringID, id)
+	result, err := s.db.Exec(query, expense.Description, expense.From, expense.To, expense.Method, expense.Note, expense.Category, expense.Amount, expense.Currency, expense.Date, expense.RecurringID, id)
 	if err != nil {
 		return fmt.Errorf("failed to update expense: %v", err)
 	}
@@ -366,8 +371,8 @@ func (s *databaseStore) RemoveMultipleExpenses(ids []string) error {
 
 func scanRecurringExpense(scanner interface{ Scan(...any) error }) (RecurringExpense, error) {
 	var re RecurringExpense
-	var fromStr, toStr, methodStr sql.NullString
-	err := scanner.Scan(&re.ID, &re.Description, &re.Amount, &re.Currency, &fromStr, &toStr, &methodStr, &re.Category, &re.StartDate, &re.Interval, &re.Occurrences)
+	var fromStr, toStr, methodStr, noteStr sql.NullString
+	err := scanner.Scan(&re.ID, &re.Description, &re.Amount, &re.Currency, &fromStr, &toStr, &methodStr, &noteStr, &re.Category, &re.StartDate, &re.Interval, &re.Occurrences)
 	if err != nil {
 		return RecurringExpense{}, err
 	}
@@ -380,11 +385,14 @@ func scanRecurringExpense(scanner interface{ Scan(...any) error }) (RecurringExp
 	if methodStr.Valid {
 		re.Method = methodStr.String
 	}
+	if noteStr.Valid {
+		re.Note = noteStr.String
+	}
 	return re, nil
 }
 
 func (s *databaseStore) GetRecurringExpenses() ([]RecurringExpense, error) {
-	query := `SELECT id, description, amount, currency, "from", "to", method, category, start_date, interval, occurrences FROM recurring_expenses`
+	query := `SELECT id, description, amount, currency, "from", "to", method, note, category, start_date, interval, occurrences FROM recurring_expenses`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query recurring expenses: %v", err)
@@ -402,7 +410,7 @@ func (s *databaseStore) GetRecurringExpenses() ([]RecurringExpense, error) {
 }
 
 func (s *databaseStore) GetRecurringExpense(id string) (RecurringExpense, error) {
-	query := `SELECT id, description, amount, currency, "from", "to", method, category, start_date, interval, occurrences FROM recurring_expenses WHERE id = $1`
+	query := `SELECT id, description, amount, currency, "from", "to", method, note, category, start_date, interval, occurrences FROM recurring_expenses WHERE id = $1`
 	re, err := scanRecurringExpense(s.db.QueryRow(query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -427,23 +435,23 @@ func (s *databaseStore) AddRecurringExpense(recurringExpense RecurringExpense) e
 		recurringExpense.Currency = s.defaults["currency"]
 	}
 	ruleQuery := `
-		INSERT INTO recurring_expenses (id, description, amount, currency, "from", "to", method, category, start_date, interval, occurrences)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO recurring_expenses (id, description, amount, currency, "from", "to", method, note, category, start_date, interval, occurrences)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
-	_, err = tx.Exec(ruleQuery, recurringExpense.ID, recurringExpense.Description, recurringExpense.Amount, recurringExpense.Currency, recurringExpense.From, recurringExpense.To, recurringExpense.Method, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences)
+	_, err = tx.Exec(ruleQuery, recurringExpense.ID, recurringExpense.Description, recurringExpense.Amount, recurringExpense.Currency, recurringExpense.From, recurringExpense.To, recurringExpense.Method, recurringExpense.Note, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences)
 	if err != nil {
 		return fmt.Errorf("failed to insert recurring expense rule: %v", err)
 	}
 
 	expensesToAdd := generateExpensesFromRecurring(recurringExpense, false)
 	if len(expensesToAdd) > 0 {
-		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "method", "category", "amount", "currency", "date"))
+		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "method", "note", "category", "amount", "currency", "date"))
 		if err != nil {
 			return fmt.Errorf("failed to prepare copy in: %v", err)
 		}
 		defer stmt.Close()
 		for _, exp := range expensesToAdd {
-			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Method, exp.Category, exp.Amount, exp.Currency, exp.Date)
+			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Method, exp.Note, exp.Category, exp.Amount, exp.Currency, exp.Date)
 			if err != nil {
 				return fmt.Errorf("failed to execute copy in: %v", err)
 			}
@@ -467,10 +475,10 @@ func (s *databaseStore) UpdateRecurringExpense(id string, recurringExpense Recur
 	}
 	ruleQuery := `
 		UPDATE recurring_expenses
-		SET description = $1, amount = $2, "from" = $3, "to" = $4, method = $5, category = $6, start_date = $7, interval = $8, occurrences = $9, currency = $10
-		WHERE id = $11
+		SET description = $1, amount = $2, "from" = $3, "to" = $4, method = $5, note = $6, category = $7, start_date = $8, interval = $9, occurrences = $10, currency = $11
+		WHERE id = $12
 	`
-	res, err := tx.Exec(ruleQuery, recurringExpense.Description, recurringExpense.Amount, recurringExpense.From, recurringExpense.To, recurringExpense.Method, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences, recurringExpense.Currency, id)
+	res, err := tx.Exec(ruleQuery, recurringExpense.Description, recurringExpense.Amount, recurringExpense.From, recurringExpense.To, recurringExpense.Method, recurringExpense.Note, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences, recurringExpense.Currency, id)
 	if err != nil {
 		return fmt.Errorf("failed to update recurring expense rule: %v", err)
 	}
@@ -493,13 +501,13 @@ func (s *databaseStore) UpdateRecurringExpense(id string, recurringExpense Recur
 
 	expensesToAdd := generateExpensesFromRecurring(recurringExpense, !updateAll)
 	if len(expensesToAdd) > 0 {
-		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "method", "category", "amount", "currency", "date"))
+		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "method", "note", "category", "amount", "currency", "date"))
 		if err != nil {
 			return fmt.Errorf("failed to prepare copy in for update: %v", err)
 		}
 		defer stmt.Close()
 		for _, exp := range expensesToAdd {
-			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Method, exp.Category, exp.Amount, exp.Currency, exp.Date)
+			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Method, exp.Note, exp.Category, exp.Amount, exp.Currency, exp.Date)
 			if err != nil {
 				return fmt.Errorf("failed to execute copy in for update: %v", err)
 			}
@@ -577,6 +585,7 @@ func generateExpensesFromRecurring(recExp RecurringExpense, fromToday bool) []Ex
 			From:        recExp.From,
 			To:          recExp.To,
 			Method:      recExp.Method,
+			Note:        recExp.Note,
 			Category:    recExp.Category,
 			Amount:      recExp.Amount,
 			Currency:    recExp.Currency,

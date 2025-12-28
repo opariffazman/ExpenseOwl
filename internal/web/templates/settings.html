@@ -151,6 +151,13 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="recurringNote">
+                        <span data-i18n="common.note">Note</span>
+                        <span id="recurringNoteRequiredIndicator" style="color: #ff6b6b; display: none;"> *</span>
+                    </label>
+                    <input type="text" id="recurringNote">
+                </div>
+                <div class="form-group">
                     <label for="recurringCategory" data-i18n="common.category">Category</label>
                     <select id="recurringCategory" required></select>
                 </div>
@@ -231,6 +238,13 @@
                         <option value="transfer" data-i18n="method.transfer">Bank Transfer</option>
                         <option value="cheque" data-i18n="method.cheque">Cheque</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="editRecurringNote">
+                        <span data-i18n="common.note">Note</span>
+                        <span id="editRecurringNoteRequiredIndicator" style="color: #ff6b6b; display: none;"> *</span>
+                    </label>
+                    <input type="text" id="editRecurringNote">
                 </div>
                 <div class="form-group">
                     <label for="editRecurringCategory" data-i18n="common.category">Category</label>
@@ -657,10 +671,15 @@
             document.getElementById('editRecurringFrom').value = recurringExpenseToEdit.from || '';
             document.getElementById('editRecurringTo').value = recurringExpenseToEdit.to || '';
             document.getElementById('editRecurringMethod').value = recurringExpenseToEdit.method || 'cash';
+            document.getElementById('editRecurringNote').value = recurringExpenseToEdit.note || '';
             document.getElementById('editRecurringCategory').value = recurringExpenseToEdit.category;
             document.getElementById('editRecurringInterval').value = recurringExpenseToEdit.interval;
             document.getElementById('editRecurringStartDate').value = new Date(recurringExpenseToEdit.startDate).toISOString().split('T')[0];
             document.getElementById('editRecurringOccurrences').value = recurringExpenseToEdit.occurrences;
+
+            // Update note requirement indicator
+            updateEditRecurringNoteRequirement(recurringExpenseToEdit.method || 'cash');
+
             document.getElementById('editRecurringModal').classList.add('active');
         }
         
@@ -671,6 +690,14 @@
 
         async function confirmRecurringUpdate(updateAll) {
             if (!recurringExpenseToEdit) return;
+
+            // Trigger HTML5 validation
+            const form = document.getElementById('editRecurringExpenseForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             let amount = parseFloat(document.getElementById('editRecurringAmount').value);
             if (!document.getElementById('editRecurringReportGain').checked) {
                 amount *= -1;
@@ -683,6 +710,7 @@
                 from: document.getElementById('editRecurringFrom').value,
                 to: document.getElementById('editRecurringTo').value,
                 method: document.getElementById('editRecurringMethod').value,
+                note: document.getElementById('editRecurringNote').value,
                 category: document.getElementById('editRecurringCategory').value,
                 interval: document.getElementById('editRecurringInterval').value,
                 startDate: new Date(document.getElementById('editRecurringStartDate').value).toISOString(),
@@ -880,8 +908,55 @@
         }
         document.getElementById('newCategory').addEventListener('keypress', e => e.key === 'Enter' && addCategory());
 
+        // Handle note field required attribute based on payment method for add recurring expense form
+        function updateRecurringNoteRequirement(method) {
+            const noteInput = document.getElementById('recurringNote');
+            const noteIndicator = document.getElementById('recurringNoteRequiredIndicator');
+
+            if (method === 'transfer' || method === 'cheque') {
+                noteInput.required = true;
+                noteIndicator.style.display = 'inline';
+            } else {
+                noteInput.required = false;
+                noteIndicator.style.display = 'none';
+            }
+        }
+
+        document.getElementById('recurringMethod').addEventListener('change', (e) => {
+            updateRecurringNoteRequirement(e.target.value);
+        });
+
+        // Initialize on page load
+        updateRecurringNoteRequirement(document.getElementById('recurringMethod').value);
+
+        // Handle note field required attribute based on payment method for edit recurring expense form
+        function updateEditRecurringNoteRequirement(method) {
+            const noteInput = document.getElementById('editRecurringNote');
+            const noteIndicator = document.getElementById('editRecurringNoteRequiredIndicator');
+
+            if (method === 'transfer' || method === 'cheque') {
+                noteInput.required = true;
+                noteIndicator.style.display = 'inline';
+            } else {
+                noteInput.required = false;
+                noteIndicator.style.display = 'none';
+            }
+        }
+
+        document.getElementById('editRecurringMethod').addEventListener('change', (e) => {
+            updateEditRecurringNoteRequirement(e.target.value);
+        });
+
         document.getElementById('recurringExpenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Trigger HTML5 validation
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const isGain = document.getElementById('recurringReportGain').checked;
             let amount = parseFloat(document.getElementById('recurringAmount').value);
             if (!isGain) amount *= -1;
@@ -892,6 +967,7 @@
                 from: document.getElementById('recurringFrom').value,
                 to: document.getElementById('recurringTo').value,
                 method: document.getElementById('recurringMethod').value,
+                note: document.getElementById('recurringNote').value,
                 category: document.getElementById('recurringCategory').value,
                 interval: document.getElementById('recurringInterval').value,
                 startDate: getISODateWithLocalTime(document.getElementById('recurringStartDate').value),

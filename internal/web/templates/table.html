@@ -84,6 +84,14 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="note">
+                        <span data-i18n="common.note">Note</span>
+                        <span id="noteRequiredIndicator" style="color: #ff6b6b; display: none;"> *</span>
+                    </label>
+                    <input type="text" id="note">
+                </div>
+
+                <div class="form-group">
                     <label for="category" data-i18n="common.category">Category</label>
                     <select id="category" required>
                         <option value="" data-i18n="common.categories">categories</option>
@@ -233,19 +241,23 @@
         function editExpenseByIndex(index) {
             const expense = expensesForTable[index];
             if (expense) {
-                editExpense(expense.id, expense.description, expense.from, expense.to, expense.method, expense.category, expense.amount, expense.date);
+                editExpense(expense.id, expense.description, expense.from, expense.to, expense.method, expense.note, expense.category, expense.amount, expense.date);
             }
         }
 
-        function editExpense(id, description, from, to, method, category, amount, date) {
+        function editExpense(id, description, from, to, method, note, category, amount, date) {
             const isGain = amount > 0;
             document.getElementById('description').value = description || '';
             document.getElementById('from').value = from || '';
             document.getElementById('to').value = to || '';
             document.getElementById('method').value = method || 'cash';
+            document.getElementById('note').value = note || '';
             document.getElementById('category').value = category;
             document.getElementById('amount').value = Math.abs(amount);
             setFormMode(isGain, true);
+
+            // Update note requirement indicator
+            updateNoteRequirement(method || 'cash');
 
             const localDate = new Date(date);
             const year = localDate.getFullYear();
@@ -287,6 +299,27 @@
         }
 
         document.getElementById('showAllToggle').addEventListener('change', updateTable);
+
+        // Handle note field required attribute based on payment method
+        function updateNoteRequirement(method) {
+            const noteInput = document.getElementById('note');
+            const noteIndicator = document.getElementById('noteRequiredIndicator');
+
+            if (method === 'transfer' || method === 'cheque') {
+                noteInput.required = true;
+                noteIndicator.style.display = 'inline';
+            } else {
+                noteInput.required = false;
+                noteIndicator.style.display = 'none';
+            }
+        }
+
+        document.getElementById('method').addEventListener('change', (e) => {
+            updateNoteRequirement(e.target.value);
+        });
+
+        // Initialize on page load
+        updateNoteRequirement(document.getElementById('method').value);
 
         document.getElementById('prevMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
@@ -355,6 +388,13 @@
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
+
+            // Trigger HTML5 validation
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const editId = form.dataset.editId;
             let amount = parseFloat(document.getElementById('amount').value);
             if (!isAddingGain) {
@@ -366,6 +406,7 @@
                 from: document.getElementById('from').value,
                 to: document.getElementById('to').value,
                 method: document.getElementById('method').value,
+                note: document.getElementById('note').value,
                 category: document.getElementById('category').value,
                 amount: amount,
                 date: getISODateWithLocalTime(document.getElementById('date').value)

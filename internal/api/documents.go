@@ -544,6 +544,24 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 		),
 	)
 
+	// Note (if exists)
+	if expense.Note != "" {
+		noteLabel := getLocalizedString(language, "common.note")
+		m.AddRow(8,
+			col.New(4).Add(
+				text.New(noteLabel+":", props.Text{
+					Size:  10,
+					Style: fontstyle.Bold,
+				}),
+			),
+			col.New(8).Add(
+				text.New(expense.Note, props.Text{
+					Size: 10,
+				}),
+			),
+		)
+	}
+
 	// Amount
 	amountLabel := getLocalizedString(language, "document.amount")
 	formattedAmount := formatCurrencyGo(expense.Amount, currency)
@@ -808,6 +826,24 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 			}),
 		),
 	)
+
+	// Note (if exists)
+	if expense.Note != "" {
+		noteLabel := getLocalizedString(language, "common.note")
+		m.AddRow(8,
+			col.New(4).Add(
+				text.New(noteLabel+":", props.Text{
+					Size:  10,
+					Style: fontstyle.Bold,
+				}),
+			),
+			col.New(8).Add(
+				text.New(expense.Note, props.Text{
+					Size: 10,
+				}),
+			),
+		)
+	}
 
 	// Amount (absolute value for expenses)
 	amountLabel := getLocalizedString(language, "document.amount")

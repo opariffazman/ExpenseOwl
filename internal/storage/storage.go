@@ -64,6 +64,7 @@ type RecurringExpense struct {
 	From        string    `json:"from"`
 	To          string    `json:"to"`
 	Method      string    `json:"method"`
+	Note        string    `json:"note"` // Required for cheque and transfer methods
 	Category    string    `json:"category"`
 	StartDate   time.Time `json:"startDate"`   // date of the first occurrence
 	Interval    string    `json:"interval"`    // daily, weekly, monthly, yearly
@@ -94,6 +95,7 @@ type Expense struct {
 	From        string    `json:"from"`
 	To          string    `json:"to"`
 	Method      string    `json:"method"`
+	Note        string    `json:"note"` // Required for cheque and transfer methods
 	Category    string    `json:"category"`
 	Amount      float64   `json:"amount"`
 	Currency    string    `json:"currency"`
