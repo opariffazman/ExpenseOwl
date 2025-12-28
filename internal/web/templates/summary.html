@@ -98,6 +98,12 @@
             <button id="nextMonth" class="nav-button"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
 
+        <div class="table-controls">
+            <label for="showLatestToggle">
+                <input type="checkbox" id="showLatestToggle" class="styled-checkbox"> <span data-i18n="summary.show_latest">Show Latest Summary</span>
+            </label>
+        </div>
+
         <div class="summary-section expense-section">
             <h2><i class="fa-solid fa-arrow-down"></i> <span data-i18n="summary.expense_breakdown">Expense Breakdown</span></h2>
             <div id="expenseTableContainer"></div>
@@ -238,12 +244,36 @@
             updateSummary();
         }
 
+        function getLatestExpenses(expenses) {
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+
+            return expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                return expDate <= today;
+            });
+        }
+
         function updateSummary() {
-            const monthExpenses = getMonthExpenses(allExpenses);
-            const summary = calculateCategorySummary(monthExpenses);
+            const showLatest = document.getElementById('showLatestToggle').checked;
+            const expensesToShow = showLatest ? getLatestExpenses(allExpenses) : getMonthExpenses(allExpenses);
+            const summary = calculateCategorySummary(expensesToShow);
 
             document.getElementById('expenseTableContainer').innerHTML = createSummaryTable(summary.expenseData, 'expenses');
             document.getElementById('incomeTableContainer').innerHTML = createSummaryTable(summary.incomeData, 'income');
+        }
+
+        function updateMonthDisplayCustom() {
+            const showLatest = document.getElementById('showLatestToggle').checked;
+            const monthNavigation = document.querySelector('.month-navigation');
+
+            if (showLatest) {
+                monthNavigation.style.display = 'none';
+                document.getElementById('currentMonth').textContent = t('summary.latest_summary', 'Latest Summary');
+            } else {
+                monthNavigation.style.display = 'flex';
+                updateMonthDisplay();
+            }
         }
 
         async function initialize() {
@@ -261,7 +291,7 @@
                 const data = await response.json();
                 allExpenses = Array.isArray(data) ? data : (data && Array.isArray(data.expenses) ? data.expenses : []);
 
-                updateMonthDisplay();
+                updateMonthDisplayCustom();
                 updateSummary();
             } catch (error) {
                 console.error('Failed to initialize summary:', error);
@@ -271,15 +301,20 @@
             }
         }
 
+        document.getElementById('showLatestToggle').addEventListener('change', () => {
+            updateMonthDisplayCustom();
+            updateSummary();
+        });
+
         document.getElementById('prevMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
-            updateMonthDisplay();
+            updateMonthDisplayCustom();
             updateSummary();
         });
 
         document.getElementById('nextMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
-            updateMonthDisplay();
+            updateMonthDisplayCustom();
             updateSummary();
         });
 

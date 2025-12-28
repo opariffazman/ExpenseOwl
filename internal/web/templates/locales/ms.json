@@ -96,7 +96,9 @@
     "total_expenses": "JUMLAH PENGELUARAN",
     "total_income": "JUMLAH PENERIMAAN",
     "no_expenses": "Tiada pengeluaran direkodkan untuk bulan ini",
-    "no_income": "Tiada pendapatan direkodkan untuk bulan ini"
+    "no_income": "Tiada pendapatan direkodkan untuk bulan ini",
+    "show_latest": "Tunjuk Ringkasan Terkini",
+    "latest_summary": "Ringkasan Terkini"
   },
   "settings": {
     "title": "Tetapan",
