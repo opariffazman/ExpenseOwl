@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,7 +12,76 @@ import (
 	"time"
 
 	"github.com/tanq16/expenseowl/internal/storage"
+	"github.com/tanq16/expenseowl/internal/web"
 )
+
+// getLocalizedString retrieves a localized string from locale files
+func getLocalizedString(language, key string) string {
+	// Default English translations
+	defaults := map[string]string{
+		"common.description": "Description",
+		"common.from":        "From",
+		"common.to":          "To",
+		"common.method":      "Method",
+		"common.category":    "Category",
+		"common.amount":      "Amount",
+		"common.date":        "Date",
+		"method.cash":        "Cash",
+		"method.transfer":    "Bank Transfer",
+		"method.cheque":      "Cheque",
+	}
+
+	// Return English default for English language
+	if language == "en" || language == "" {
+		if val, ok := defaults[key]; ok {
+			return val
+		}
+		return key
+	}
+
+	// Try to load locale file for other languages
+	fs := web.GetTemplates()
+	localeFile := "locales/" + language + ".json"
+	localeData, err := fs.ReadFile("templates/" + localeFile)
+	if err != nil {
+		log.Printf("Warning: Failed to load locale file %s, using English: %v\n", localeFile, err)
+		if val, ok := defaults[key]; ok {
+			return val
+		}
+		return key
+	}
+
+	// Parse locale JSON
+	var locale map[string]interface{}
+	if err := json.Unmarshal(localeData, &locale); err != nil {
+		log.Printf("Warning: Failed to parse locale file %s: %v\n", localeFile, err)
+		if val, ok := defaults[key]; ok {
+			return val
+		}
+		return key
+	}
+
+	// Extract nested key (e.g., "common.description" -> locale["common"]["description"])
+	parts := strings.Split(key, ".")
+	if len(parts) != 2 {
+		if val, ok := defaults[key]; ok {
+			return val
+		}
+		return key
+	}
+
+	if section, ok := locale[parts[0]].(map[string]interface{}); ok {
+		if value, ok := section[parts[1]].(string); ok {
+			return value
+		}
+	}
+
+	// Fallback to English
+	if val, ok := defaults[key]; ok {
+		return val
+	}
+	return key
+}
 
 // exports all expenses to CSV
 func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
@@ -25,13 +95,30 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API ERROR: Failed to retrieve expenses for CSV export: %v\n", err)
 		return
 	}
+
+	// Get user's language preference
+	language, err := h.storage.GetLanguage()
+	if err != nil {
+		log.Printf("Warning: Failed to get language preference, defaulting to English: %v\n", err)
+		language = "en"
+	}
+
 	w.Header().Set("Content-Type", "text/csv")
 	w.Header().Set("Content-Disposition", "attachment; filename=expenses.csv")
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
 
-	// Write header
-	headers := []string{"ID", "Name", "Category", "Amount", "Date", "Tags"}
+	// Write header - localized to match table view column names
+	headers := []string{
+		"ID",
+		getLocalizedString(language, "common.description"),
+		getLocalizedString(language, "common.from"),
+		getLocalizedString(language, "common.to"),
+		getLocalizedString(language, "common.method"),
+		getLocalizedString(language, "common.category"),
+		getLocalizedString(language, "common.amount"),
+		getLocalizedString(language, "common.date"),
+	}
 	if err := writer.Write(headers); err != nil {
 		log.Printf("API ERROR: Failed to write CSV header: %v\n", err)
 		return
@@ -39,13 +126,20 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 
 	// Write records
 	for _, expense := range expenses {
+		method := expense.Method
+		if method == "" {
+			method = "cash"
+		}
+		// Localize method value
+		localizedMethod := getLocalizedString(language, "method."+method)
+
 		record := []string{
 			expense.ID,
 			expense.Description,
 			expense.From,
 			expense.To,
+			localizedMethod,
 			expense.Category,
-			// expense.Currency,
 			strconv.FormatFloat(expense.Amount, 'f', 2, 64),
 			expense.Date.Format(time.RFC3339),
 		}
