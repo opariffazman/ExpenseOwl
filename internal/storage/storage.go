@@ -63,6 +63,7 @@ type RecurringExpense struct {
 	Currency    string    `json:"currency"`
 	From        string    `json:"from"`
 	To          string    `json:"to"`
+	Method      string    `json:"method"`
 	Category    string    `json:"category"`
 	StartDate   time.Time `json:"startDate"`   // date of the first occurrence
 	Interval    string    `json:"interval"`    // daily, weekly, monthly, yearly
@@ -92,6 +93,7 @@ type Expense struct {
 	Description string    `json:"description"`
 	From        string    `json:"from"`
 	To          string    `json:"to"`
+	Method      string    `json:"method"`
 	Category    string    `json:"category"`
 	Amount      float64   `json:"amount"`
 	Currency    string    `json:"currency"`
@@ -180,6 +182,7 @@ func (e *Expense) Validate() error {
 	}
 	e.From = SanitizeString(e.From)
 	e.To = SanitizeString(e.To)
+	e.Method = SanitizeString(e.Method)
 	if e.Category == "" {
 		return fmt.Errorf("expense 'category' cannot be empty")
 	}
@@ -202,6 +205,7 @@ func (e *RecurringExpense) Validate() error {
 	}
 	e.From = SanitizeString(e.From)
 	e.To = SanitizeString(e.To)
+	e.Method = SanitizeString(e.Method)
 	if e.Category == "" {
 		return fmt.Errorf("recurring expense 'category' cannot be empty")
 	}

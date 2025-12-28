@@ -12,6 +12,7 @@
     "description": "Huraian",
     "from": "Dari",
     "to": "Kepada",
+    "method": "Cara",
     "category": "Kategori",
     "categories": "kategori",
     "tags": "Tag",
@@ -175,6 +176,11 @@
     "failed_settings": "Gagal memuatkan tetapan",
     "no_recurring": "Tiada pengeluaran berulang dijumpai.",
     "error_loading_recurring": "Ralat memuatkan pengeluaran berulang."
+  },
+  "method": {
+    "cash": "Tunai",
+    "transfer": "Pindahan Bank",
+    "cheque": "Cek"
   },
   "tags_create": "+ Cipta \"{tag}\""
 }

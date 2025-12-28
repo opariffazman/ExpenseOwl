@@ -143,6 +143,14 @@
                     <input type="text" id="recurringTo">
                 </div>
                 <div class="form-group">
+                    <label for="recurringMethod" data-i18n="common.method">Method</label>
+                    <select id="recurringMethod">
+                        <option value="cash" data-i18n="method.cash">Cash</option>
+                        <option value="transfer" data-i18n="method.transfer">Bank Transfer</option>
+                        <option value="cheque" data-i18n="method.cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="recurringCategory" data-i18n="common.category">Category</label>
                     <select id="recurringCategory" required></select>
                 </div>
@@ -215,6 +223,14 @@
                 <div class="form-group">
                     <label for="editRecurringTo" data-i18n="common.to">To</label>
                     <input type="text" id="editRecurringTo">
+                </div>
+                <div class="form-group">
+                    <label for="editRecurringMethod" data-i18n="common.method">Method</label>
+                    <select id="editRecurringMethod">
+                        <option value="cash" data-i18n="method.cash">Cash</option>
+                        <option value="transfer" data-i18n="method.transfer">Bank Transfer</option>
+                        <option value="cheque" data-i18n="method.cheque">Cheque</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="editRecurringCategory" data-i18n="common.category">Category</label>
@@ -585,13 +601,14 @@
             }
             list.innerHTML = `
                 <table class="expense-table">
-                    <thead><tr><th>Description</th><th>From</th><th>To</th><th>Amount</th><th>Category</th><th>Interval</th><th>Next Occurrence</th><th></th></tr></thead>
+                    <thead><tr><th>Description</th><th>From</th><th>To</th><th>Method</th><th>Amount</th><th>Category</th><th>Interval</th><th>Next Occurrence</th><th></th></tr></thead>
                     <tbody>
                         ${recurring.map(r => `
                             <tr>
                                 <td>${r.description || ''}</td>
                                 <td>${r.from || ''}</td>
                                 <td>${r.to || ''}</td>
+                                <td>${t('method.' + (r.method || 'cash'), r.method || 'Cash')}</td>
                                 <td>${formatCurrency(r.amount)}</td>
                                 <td>${r.category}</td>
                                 <td>${r.interval.charAt(0).toUpperCase() + r.interval.slice(1)}</td>
@@ -639,6 +656,7 @@
             document.getElementById('editRecurringReportGain').checked = recurringExpenseToEdit.amount > 0;
             document.getElementById('editRecurringFrom').value = recurringExpenseToEdit.from || '';
             document.getElementById('editRecurringTo').value = recurringExpenseToEdit.to || '';
+            document.getElementById('editRecurringMethod').value = recurringExpenseToEdit.method || 'cash';
             document.getElementById('editRecurringCategory').value = recurringExpenseToEdit.category;
             document.getElementById('editRecurringInterval').value = recurringExpenseToEdit.interval;
             document.getElementById('editRecurringStartDate').value = new Date(recurringExpenseToEdit.startDate).toISOString().split('T')[0];
@@ -664,6 +682,7 @@
                 amount: amount,
                 from: document.getElementById('editRecurringFrom').value,
                 to: document.getElementById('editRecurringTo').value,
+                method: document.getElementById('editRecurringMethod').value,
                 category: document.getElementById('editRecurringCategory').value,
                 interval: document.getElementById('editRecurringInterval').value,
                 startDate: new Date(document.getElementById('editRecurringStartDate').value).toISOString(),
@@ -872,6 +891,7 @@
                 amount: amount,
                 from: document.getElementById('recurringFrom').value,
                 to: document.getElementById('recurringTo').value,
+                method: document.getElementById('recurringMethod').value,
                 category: document.getElementById('recurringCategory').value,
                 interval: document.getElementById('recurringInterval').value,
                 startDate: getISODateWithLocalTime(document.getElementById('recurringStartDate').value),
