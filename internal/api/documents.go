@@ -10,14 +10,17 @@ import (
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
+	"github.com/johnfercher/maroto/v2/pkg/components/image"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
+	"github.com/johnfercher/maroto/v2/pkg/consts/extension"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/consts/pagesize"
 	"github.com/johnfercher/maroto/v2/pkg/consts/orientation"
 	"github.com/johnfercher/maroto/v2/pkg/props"
 	"github.com/tanq16/expenseowl/internal/storage"
+	"github.com/tanq16/expenseowl/internal/web"
 )
 
 // currencyBehavior defines how a currency should be formatted
@@ -365,11 +368,33 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 
 	m := maroto.New(cfg)
 
+	// Load logo from embedded filesystem
+	fs := web.GetTemplates()
+	logoBytes, err := fs.ReadFile("templates/pwa/icon-512.png")
+	if err != nil {
+		log.Printf("Warning: Failed to load logo for receipt: %v\n", err)
+	}
+
+	// Logo and Title header
+	if logoBytes != nil {
+		m.AddRow(25,
+			col.New(3), // Left spacing
+			col.New(6).Add(
+				image.NewFromBytes(logoBytes, extension.Png, props.Rect{
+					Center:  true,
+					Percent: 60,
+				}),
+			),
+			col.New(3), // Right spacing
+		)
+		m.AddRow(3) // Small spacing
+	}
+
 	// Title
-	m.AddRow(15,
+	m.AddRow(12,
 		text.NewCol(12, getLocalizedString(language, "receipt.title"),
 			props.Text{
-				Top:   5,
+				Top:   3,
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Center,
@@ -377,7 +402,7 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 	)
 
 	// Spacing
-	m.AddRow(3)
+	m.AddRow(5)
 
 	// Received From section
 	receivedFromLabel := getLocalizedString(language, "receipt.received_from")
@@ -567,11 +592,33 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 
 	m := maroto.New(cfg)
 
+	// Load logo from embedded filesystem
+	fs := web.GetTemplates()
+	logoBytes, err := fs.ReadFile("templates/pwa/icon-512.png")
+	if err != nil {
+		log.Printf("Warning: Failed to load logo for voucher: %v\n", err)
+	}
+
+	// Logo and Title header
+	if logoBytes != nil {
+		m.AddRow(25,
+			col.New(3), // Left spacing
+			col.New(6).Add(
+				image.NewFromBytes(logoBytes, extension.Png, props.Rect{
+					Center:  true,
+					Percent: 60,
+				}),
+			),
+			col.New(3), // Right spacing
+		)
+		m.AddRow(3) // Small spacing
+	}
+
 	// Title
-	m.AddRow(15,
+	m.AddRow(12,
 		text.NewCol(12, getLocalizedString(language, "voucher.title"),
 			props.Text{
-				Top:   5,
+				Top:   3,
 				Size:  16,
 				Style: fontstyle.Bold,
 				Align: align.Center,
@@ -579,7 +626,7 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 	)
 
 	// Spacing
-	m.AddRow(3)
+	m.AddRow(5)
 
 	// Paid To section
 	paidToLabel := getLocalizedString(language, "voucher.paid_to")
