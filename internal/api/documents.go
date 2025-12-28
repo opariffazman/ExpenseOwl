@@ -160,9 +160,40 @@ func formatNumberNoDecimal(amount float64) string {
 	return result.String()
 }
 
-// formatDateHuman formats a date in human-readable format
-func formatDateHuman(date time.Time) string {
-	return date.Format("January 2, 2006")
+// formatDateHuman formats a date in human-readable format with localized month names
+func formatDateHuman(date time.Time, language string) string {
+	// Month keys for localization lookup
+	monthKeys := []string{
+		"months.january", "months.february", "months.march", "months.april",
+		"months.may", "months.june", "months.july", "months.august",
+		"months.september", "months.october", "months.november", "months.december",
+	}
+
+	// Get localized month name (Month() returns 1-12)
+	monthName := getLocalizedString(language, monthKeys[date.Month()-1])
+
+	// Format: "2 January 2006"
+	return fmt.Sprintf("%d %s %d", date.Day(), monthName, date.Year())
+}
+
+// formatTimestampHuman formats a timestamp in human-readable format with localized month names
+func formatTimestampHuman(t time.Time, language string) string {
+	// Month keys for localization lookup
+	monthKeys := []string{
+		"months.january", "months.february", "months.march", "months.april",
+		"months.may", "months.june", "months.july", "months.august",
+		"months.september", "months.october", "months.november", "months.december",
+	}
+
+	// Get localized month name (Month() returns 1-12)
+	monthName := getLocalizedString(language, monthKeys[t.Month()-1])
+
+	// Get timezone name
+	zone, _ := t.Zone()
+
+	// Format: "2 January 2006, 15:04 MST" (using server local time)
+	return fmt.Sprintf("%d %s %d, %02d:%02d %s",
+		t.Day(), monthName, t.Year(), t.Hour(), t.Minute(), zone)
 }
 
 // shortenID returns first 8 characters of a UUID
@@ -395,7 +426,7 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 			}),
 		),
 		col.New(8).Add(
-			text.New(formatDateHuman(expense.Date), props.Text{
+			text.New(formatDateHuman(expense.Date, language), props.Text{
 				Size: 10,
 			}),
 		),
@@ -496,7 +527,7 @@ func buildReceiptPDF(expense storage.Expense, language, currency string) ([]byte
 	// Footer
 	generatedByLabel := getLocalizedString(language, "receipt.generated_by")
 	generatedOnLabel := getLocalizedString(language, "receipt.generated_on")
-	currentTime := time.Now().Format("January 2, 2006 at 3:04 PM MST")
+	currentTime := formatTimestampHuman(time.Now(), language)
 
 	m.AddRow(8,
 		text.NewCol(12, generatedByLabel,
@@ -597,7 +628,7 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 			}),
 		),
 		col.New(8).Add(
-			text.New(formatDateHuman(expense.Date), props.Text{
+			text.New(formatDateHuman(expense.Date, language), props.Text{
 				Size: 10,
 			}),
 		),
@@ -698,7 +729,7 @@ func buildVoucherPDF(expense storage.Expense, language, currency string) ([]byte
 	// Footer
 	forInternalLabel := getLocalizedString(language, "voucher.for_internal")
 	generatedOnLabel := getLocalizedString(language, "receipt.generated_on")
-	currentTime := time.Now().Format("January 2, 2006 at 3:04 PM MST")
+	currentTime := formatTimestampHuman(time.Now(), language)
 
 	m.AddRow(8,
 		text.NewCol(12, forInternalLabel,
