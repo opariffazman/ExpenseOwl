@@ -195,6 +195,15 @@
                                 <td class="amount">${formatCurrency(expense.amount)}</td>
                                 <td class="date-column">${formatDateFromUTC(expense.date)}</td>
                                 <td>
+                                    ${expense.amount > 0 ? `
+                                        <button class="receipt-button" onclick="downloadReceipt('${expense.id}')" title="${t('table.download_receipt', 'Download Receipt')}">
+                                            <i class="fa-solid fa-file-invoice"></i>
+                                        </button>
+                                    ` : `
+                                        <button class="voucher-button" onclick="downloadVoucher('${expense.id}')" title="${t('table.download_voucher', 'Download Voucher')}">
+                                            <i class="fa-solid fa-file-pdf"></i>
+                                        </button>
+                                    `}
                                     <button class="edit-button" onclick="editExpenseByIndex(${index})">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
@@ -292,6 +301,14 @@
         });
 
         let expenseToDelete = null;
+
+        function downloadReceipt(expenseId) {
+            window.location.href = `/receipt/pdf?id=${expenseId}`;
+        }
+
+        function downloadVoucher(expenseId) {
+            window.location.href = `/voucher/pdf?id=${expenseId}`;
+        }
 
         function showDeleteModal(id) {
             expenseToDelete = id;

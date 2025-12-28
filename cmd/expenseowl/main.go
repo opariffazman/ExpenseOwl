@@ -92,6 +92,10 @@ func runServer(port int) {
 	http.HandleFunc("/import/csv", handler.ImportCSV)
 	http.HandleFunc("/import/csvold", handler.ImportOldCSV)
 
+	// Document Generation
+	http.HandleFunc("/receipt/pdf", handler.GenerateReceiptPDF)
+	http.HandleFunc("/voucher/pdf", handler.GenerateVoucherPDF)
+
 	log.Println("Starting server on port", port, "...")
 	if err := http.ListenAndServe(fmt.Sprint(":", port), nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)

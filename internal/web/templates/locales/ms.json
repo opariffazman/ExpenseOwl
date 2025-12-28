@@ -57,7 +57,27 @@
     "update_gain": "Kemas Kini Penerimaan",
     "add_expense": "Tambah Pengeluaran",
     "add_gain": "Tambah Penerimaan",
-    "failed_load": "Gagal memuatkan pengeluaran"
+    "failed_load": "Gagal memuatkan pengeluaran",
+    "download_receipt": "Muat Turun Resit",
+    "download_voucher": "Muat Turun Baucar"
+  },
+  "receipt": {
+    "title": "Resit Pembayaran",
+    "received_from": "Diterima Daripada",
+    "transaction_id": "ID Transaksi",
+    "details": "Butiran Transaksi",
+    "generated_on": "Dijana pada",
+    "generated_by": "Dijana oleh PBAKTH"
+  },
+  "voucher": {
+    "title": "Baucar Pembayaran",
+    "paid_to": "Dibayar Kepada",
+    "voucher_id": "ID Baucar",
+    "details": "Butiran Perbelanjaan",
+    "for_internal": "Untuk Kegunaan Dalaman Sahaja"
+  },
+  "document": {
+    "amount": "Jumlah"
   },
   "summary": {
     "monthly_summary": "Ringkasan Bulanan",

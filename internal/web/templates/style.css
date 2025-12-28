@@ -308,6 +308,26 @@ header {
     color: var(--accent);
 }
 
+.receipt-button, .voucher-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    transition: all 0.2s;
+}
+
+.receipt-button:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+.voucher-button:hover {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #2196f3;
+}
+
 .modal {
     display: none;
     position: fixed;
