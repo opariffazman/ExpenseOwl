@@ -12,6 +12,9 @@ FROM alpine:latest
 
 WORKDIR /app
 
+# Install timezone data
+RUN apk add --no-cache tzdata
+
 # Create data directory if not exists
 RUN mkdir -p /app/data
 
