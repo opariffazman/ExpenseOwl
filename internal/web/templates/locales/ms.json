@@ -67,7 +67,7 @@
     "transaction_id": "ID Transaksi",
     "details": "Butiran Transaksi",
     "generated_on": "Dijana pada",
-    "generated_by": "Dijana oleh PBAKTH"
+    "generated_by": "Dijana oleh komputer, tandatangan tidak diperlukan"
   },
   "voucher": {
     "title": "Baucar Pembayaran",
