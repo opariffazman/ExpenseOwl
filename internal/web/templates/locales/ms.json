@@ -104,7 +104,8 @@
     "no_expenses": "Tiada pengeluaran direkodkan untuk bulan ini",
     "no_income": "Tiada pendapatan direkodkan untuk bulan ini",
     "show_latest": "Tunjuk Ringkasan Terkini",
-    "latest_summary": "Ringkasan Terkini"
+    "latest_summary": "Ringkasan Terkini",
+    "generate_statement": "Jana Penyata"
   },
   "settings": {
     "title": "Tetapan",
@@ -123,6 +124,10 @@
     "start_date_settings": "Tetapan Tarikh Mula",
     "start_date_placeholder": "1",
     "start_date_saved": "Tarikh mula berjaya disimpan",
+    "opening_balance_settings": "Tetapan Baki Pembukaan",
+    "opening_balance_placeholder": "0.00",
+    "opening_balance_saved": "Baki pembukaan berjaya disimpan",
+    "failed_save_opening_balance": "Gagal menyimpan baki pembukaan",
     "theme_settings": "Tetapan Tema",
     "theme_updated": "Tema berjaya dikemas kini.",
     "language_settings": "Tetapan Bahasa",
@@ -220,6 +225,16 @@
     "cash": "Tunai",
     "transfer": "Pindahan Bank",
     "cheque": "Cek"
+  },
+  "statement": {
+    "title": "PENYATA KEWANGAN",
+    "debit": "PENGELUARAN",
+    "credit": "PENERIMAAN",
+    "opening_balance": "Baki Akaun",
+    "closing_balance": "Baki Akaun",
+    "total": "JUMLAH",
+    "period_to": "hingga",
+    "fiscal_year": "Tahun Fiskal"
   },
   "tags_create": "+ Cipta \"{tag}\""
 }

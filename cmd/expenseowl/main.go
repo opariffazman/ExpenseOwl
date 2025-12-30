@@ -71,6 +71,8 @@ func runServer(port int) {
 	http.HandleFunc("/startdate/edit", handler.UpdateStartDate)
 	http.HandleFunc("/language", handler.GetLanguage)
 	http.HandleFunc("/language/edit", handler.UpdateLanguage)
+	http.HandleFunc("/openingbalance", handler.GetOpeningBalance)
+	http.HandleFunc("/openingbalance/edit", handler.UpdateOpeningBalance)
 	// http.HandleFunc("/tags", handler.GetTags)
 	// http.HandleFunc("/tags/edit", handler.UpdateTags)
 
@@ -96,6 +98,7 @@ func runServer(port int) {
 	http.HandleFunc("/receipt/pdf", handler.GenerateReceiptPDF)
 	http.HandleFunc("/voucher/pdf", handler.GenerateVoucherPDF)
 	http.HandleFunc("/report/pdf", handler.GenerateReportPDF)
+	http.HandleFunc("/statement/pdf", handler.GenerateStatementPDF)
 
 	log.Println("Starting server on port", port, "...")
 	if err := http.ListenAndServe(fmt.Sprint(":", port), nil); err != nil {

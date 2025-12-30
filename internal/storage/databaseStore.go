@@ -58,7 +58,8 @@ const (
 		currency VARCHAR(255) NOT NULL,
 		start_date INTEGER NOT NULL,
 		voucher_counter INTEGER DEFAULT 0,
-		receipt_counter INTEGER DEFAULT 0
+		receipt_counter INTEGER DEFAULT 0,
+		opening_balance DECIMAL(15,2) DEFAULT 0
 	);`
 )
 
@@ -127,10 +128,11 @@ func (s *databaseStore) updateConfig(updater func(c *Config) error) error {
 }
 
 func (s *databaseStore) GetConfig() (*Config, error) {
-	query := `SELECT categories, currency, start_date, COALESCE(voucher_counter, 0), COALESCE(receipt_counter, 0) FROM config WHERE id = 'default'`
+	query := `SELECT categories, currency, start_date, COALESCE(voucher_counter, 0), COALESCE(receipt_counter, 0), COALESCE(opening_balance, 0) FROM config WHERE id = 'default'`
 	var categoriesStr, currency string
 	var startDate, voucherCounter, receiptCounter int
-	err := s.db.QueryRow(query).Scan(&categoriesStr, &currency, &startDate, &voucherCounter, &receiptCounter)
+	var openingBalance float64
+	err := s.db.QueryRow(query).Scan(&categoriesStr, &currency, &startDate, &voucherCounter, &receiptCounter, &openingBalance)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -149,6 +151,7 @@ func (s *databaseStore) GetConfig() (*Config, error) {
 	config.StartDate = startDate
 	config.VoucherCounter = voucherCounter
 	config.ReceiptCounter = receiptCounter
+	config.OpeningBalance = openingBalance
 	if err := json.Unmarshal([]byte(categoriesStr), &config.Categories); err != nil {
 		return nil, fmt.Errorf("failed to parse categories from db: %v", err)
 	}
@@ -232,6 +235,20 @@ func (s *databaseStore) UpdateLanguage(language string) error {
 		c.Language = language
 		return nil
 	})
+}
+
+func (s *databaseStore) GetOpeningBalance() (float64, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return 0, err
+	}
+	return config.OpeningBalance, nil
+}
+
+func (s *databaseStore) UpdateOpeningBalance(balance float64) error {
+	query := `UPDATE config SET opening_balance = $1 WHERE id = 'default'`
+	_, err := s.db.Exec(query, balance)
+	return err
 }
 
 func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {

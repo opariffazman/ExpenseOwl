@@ -24,6 +24,8 @@ type Storage interface {
 	UpdateStartDate(startDate int) error
 	GetLanguage() (string, error)
 	UpdateLanguage(language string) error
+	GetOpeningBalance() (float64, error)
+	UpdateOpeningBalance(balance float64) error
 
 	// Recurring Expenses
 	GetRecurringExpenses() ([]RecurringExpense, error)
@@ -55,6 +57,7 @@ type Config struct {
 	RecurringExpenses []RecurringExpense `json:"recurringExpenses"`
 	VoucherCounter    int                `json:"voucherCounter"`    // Counter for BAU (Baucar/voucher) IDs
 	ReceiptCounter    int                `json:"receiptCounter"`    // Counter for RES (Resit/receipt) IDs
+	OpeningBalance    float64            `json:"openingBalance"`    // Opening balance for statement generation
 	// Tags              []string           `json:"tags"`
 }
 

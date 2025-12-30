@@ -109,6 +109,9 @@
             <label for="showLatestToggle">
                 <input type="checkbox" id="showLatestToggle" class="styled-checkbox"> <span data-i18n="summary.show_latest">Show Latest Summary</span>
             </label>
+            <button id="generateStatementBtn" class="nav-button" style="margin-left: auto;">
+                <i class="fa-solid fa-file-pdf"></i> <span data-i18n="summary.generate_statement">Generate Statement</span>
+            </button>
         </div>
 
         <div class="summary-section expense-section">
@@ -323,6 +326,47 @@
             currentDate.setMonth(currentDate.getMonth() + 1);
             updateMonthDisplayCustom();
             updateSummary();
+        });
+
+        document.getElementById('generateStatementBtn').addEventListener('click', async () => {
+            try {
+                // Always use all expenses (latest view - full fiscal year)
+                const expensesToShow = getLatestExpenses(allExpenses);
+
+                // Get current year for fiscal year range
+                const currentYear = new Date().getFullYear();
+                const fiscalYearStart = new Date(currentYear, 0, 1); // Jan 1
+                const fiscalYearEnd = new Date(currentYear, 11, 31); // Dec 31
+
+                // Prepare statement data
+                const statementData = {
+                    startDate: fiscalYearStart.toISOString(),
+                    endDate: fiscalYearEnd.toISOString(),
+                    expenses: expensesToShow
+                };
+
+                const response = await fetch('/statement/pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(statementData)
+                });
+
+                if (!response.ok) throw new Error('Failed to generate statement');
+
+                // Download the PDF
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `statement-${currentYear}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error generating statement:', error);
+                alert('Failed to generate statement. Please try again.');
+            }
         });
 
         initialize();

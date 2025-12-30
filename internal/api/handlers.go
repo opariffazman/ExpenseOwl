@@ -270,6 +270,38 @@ func (h *Handler) UpdateStartDate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
+func (h *Handler) GetOpeningBalance(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	balance, err := h.storage.GetOpeningBalance()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to get opening balance"})
+		log.Printf("API ERROR: Failed to get opening balance: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, balance)
+}
+
+func (h *Handler) UpdateOpeningBalance(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	var balance float64
+	if err := json.NewDecoder(r.Body).Decode(&balance); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+	if err := h.storage.UpdateOpeningBalance(balance); err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to update opening balance"})
+		log.Printf("API ERROR: Failed to update opening balance: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
 func (h *Handler) GetLanguage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})

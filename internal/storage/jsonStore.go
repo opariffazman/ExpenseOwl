@@ -223,6 +223,25 @@ func (s *jsonStore) UpdateLanguage(language string) error {
 	return s.writeConfigFile(s.configPath, data)
 }
 
+func (s *jsonStore) GetOpeningBalance() (float64, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return 0, err
+	}
+	return config.OpeningBalance, nil
+}
+
+func (s *jsonStore) UpdateOpeningBalance(balance float64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	data, err := s.readConfigFile(s.configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %v", err)
+	}
+	data.OpeningBalance = balance
+	return s.writeConfigFile(s.configPath, data)
+}
+
 func (s *jsonStore) GetRecurringExpenses() ([]RecurringExpense, error) {
 	config, err := s.GetConfig()
 	if err != nil {

@@ -86,6 +86,17 @@
 
         <div class="settings-container">
             <div class="form-container half-width">
+                <h2 align="center" data-i18n="settings.opening_balance_settings">Opening Balance Settings</h2>
+                <div class="start-date-manager">
+                    <input type="number" id="openingBalance" step="0.01" placeholder="0.00" data-i18n="settings.opening_balance_placeholder" data-i18n-attr="placeholder">
+                    <button id="saveOpeningBalance" class="nav-button" data-i18n="common.save">Save</button>
+                </div>
+                <div id="openingBalanceMessage" class="form-message"></div>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            <div class="form-container half-width">
                 <h2 align="center" data-i18n="settings.theme_settings">Theme Settings</h2>
                 <div class="theme-selector">
                     <select id="themeSelect">
@@ -574,7 +585,22 @@
                 showMessage('startDateMessage', 'Error saving start date', false);
             }
         }
-        
+
+        async function saveOpeningBalance() {
+            const balance = parseFloat(document.getElementById('openingBalance').value) || 0;
+            try {
+                const response = await fetch('/openingbalance/edit', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(balance)
+                });
+                showMessage('openingBalanceMessage', response.ok ? 'Opening balance saved successfully' : 'Failed to save opening balance', response.ok);
+            } catch (error) {
+                console.error('Error saving opening balance:', error);
+                showMessage('openingBalanceMessage', 'Error saving opening balance', false);
+            }
+        }
+
         async function fetchAndRenderRecurringExpenses() {
             try {
                 const response = await fetch('/recurring-expenses');
@@ -844,6 +870,7 @@
                 categories = [...config.categories];
                 currentCurrency = config.currency;
                 currentStartDate = config.startDate;
+                document.getElementById('openingBalance').value = config.openingBalance || 0;
 
                 renderCategories();
                 populateCurrencySelect();
@@ -907,6 +934,7 @@
         document.getElementById('saveCategories').addEventListener('click', saveCategories);
         document.getElementById('saveCurrency').addEventListener('click', saveCurrency);
         document.getElementById('saveStartDate').addEventListener('click', saveStartDate);
+        document.getElementById('saveOpeningBalance').addEventListener('click', saveOpeningBalance);
         document.getElementById('csv-import-file').addEventListener('change', handleCsvImport);
         const csvImportOld = document.getElementById('csv-import-file-old');
         if (csvImportOld) {

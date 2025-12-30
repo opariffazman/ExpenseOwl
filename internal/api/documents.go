@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -16,6 +17,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
+	"github.com/johnfercher/maroto/v2/pkg/consts/border"
 	"github.com/johnfercher/maroto/v2/pkg/consts/extension"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/consts/pagesize"
@@ -1131,6 +1133,457 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 				Style: fontstyle.Bold,
 				Align: align.Right,
 			}),
+	)
+
+	// Generate PDF bytes
+	doc, err := m.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	return doc.GetBytes(), nil
+}
+
+// GenerateStatementPDF generates a trial balance PDF statement
+func (h *Handler) GenerateStatementPDF(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+
+	// Parse request body
+	var requestData struct {
+		StartDate *string            `json:"startDate"`
+		EndDate   *string            `json:"endDate"`
+		Expenses  []storage.Expense  `json:"expenses"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
+		log.Printf("API ERROR: Failed to decode statement request: %v\n", err)
+		return
+	}
+
+	// Parse dates if provided
+	var startDate, endDate *time.Time
+	if requestData.StartDate != nil && *requestData.StartDate != "" {
+		parsed, err := time.Parse(time.RFC3339, *requestData.StartDate)
+		if err != nil {
+			log.Printf("Warning: Failed to parse start date: %v\n", err)
+		} else {
+			startDate = &parsed
+		}
+	}
+	if requestData.EndDate != nil && *requestData.EndDate != "" {
+		parsed, err := time.Parse(time.RFC3339, *requestData.EndDate)
+		if err != nil {
+			log.Printf("Warning: Failed to parse end date: %v\n", err)
+		} else {
+			endDate = &parsed
+		}
+	}
+
+	// Get opening balance
+	openingBalance, err := h.storage.GetOpeningBalance()
+	if err != nil {
+		log.Printf("Warning: Failed to get opening balance, using 0: %v\n", err)
+		openingBalance = 0
+	}
+
+	// Get user preferences
+	language, err := h.storage.GetLanguage()
+	if err != nil {
+		log.Printf("Warning: Failed to get language preference, defaulting to English: %v\n", err)
+		language = "en"
+	}
+
+	currency, err := h.storage.GetCurrency()
+	if err != nil || currency == "" {
+		currency = "usd"
+	}
+
+	// Generate PDF
+	pdfBytes, err := buildStatementPDF(requestData.Expenses, startDate, endDate, openingBalance, language, currency)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate statement PDF"})
+		log.Printf("API ERROR: Failed to generate statement PDF: %v\n", err)
+		return
+	}
+
+	// Set headers and stream PDF
+	filename := fmt.Sprintf("statement-%s.pdf", time.Now().Format("2006-01-02"))
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Write(pdfBytes)
+
+	log.Printf("HTTP: Generated statement PDF\n")
+}
+
+// buildStatementPDF creates a trial balance PDF with debit and credit columns
+func buildStatementPDF(expenses []storage.Expense, startDate, endDate *time.Time, openingBalance float64, language, currency string) ([]byte, error) {
+	// Create maroto configuration
+	cfg := config.NewBuilder().
+		WithPageSize(pagesize.A4).
+		WithOrientation(orientation.Vertical).
+		WithLeftMargin(10).
+		WithTopMargin(15).
+		WithRightMargin(10).
+		WithBottomMargin(10).
+		Build()
+
+	m := maroto.New(cfg)
+
+	// Add letterhead header
+	addLetterheadHeader(m)
+
+	// Add letterhead footer
+	addLetterheadFooter(m, language, "receipt.generated_by")
+
+	// Get localized strings
+	statementTitle := getLocalizedString(language, "statement.title")
+	if statementTitle == "statement.title" {
+		statementTitle = "PENYATA KEWANGAN"
+	}
+
+	accountBalanceLabel := getLocalizedString(language, "statement.opening_balance")
+	if accountBalanceLabel == "statement.opening_balance" {
+		accountBalanceLabel = "Baki Akaun"
+	}
+
+	debitLabel := getLocalizedString(language, "statement.debit")
+	if debitLabel == "statement.debit" {
+		debitLabel = "PENGELUARAN"
+	}
+
+	creditLabel := getLocalizedString(language, "statement.credit")
+	if creditLabel == "statement.credit" {
+		creditLabel = "PENERIMAAN"
+	}
+
+	categoryLabel := getLocalizedString(language, "common.category")
+	if categoryLabel == "common.category" {
+		categoryLabel = "Category"
+	}
+
+	amountLabel := getLocalizedString(language, "common.amount")
+	if amountLabel == "common.amount" {
+		amountLabel = "Amount"
+	}
+
+	totalLabel := getLocalizedString(language, "statement.total")
+	if totalLabel == "statement.total" {
+		totalLabel = "JUMLAH"
+	}
+
+	fiscalYearLabel := getLocalizedString(language, "statement.fiscal_year")
+	if fiscalYearLabel == "statement.fiscal_year" {
+		fiscalYearLabel = "Tahun Fiskal"
+	}
+
+	// Get January and December localized names
+	januaryLabel := getLocalizedString(language, "months.january")
+	if januaryLabel == "months.january" {
+		januaryLabel = "January"
+	}
+	decemberLabel := getLocalizedString(language, "months.december")
+	if decemberLabel == "months.december" {
+		decemberLabel = "December"
+	}
+
+	// Determine fiscal year from dates or current year
+	var fiscalYear int
+	if startDate != nil {
+		fiscalYear = startDate.Year()
+	} else if endDate != nil {
+		fiscalYear = endDate.Year()
+	} else {
+		fiscalYear = time.Now().Year()
+	}
+
+	// Title
+	m.AddRow(12,
+		text.NewCol(12, statementTitle,
+			props.Text{
+				Top:   3,
+				Size:  16,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+	)
+
+	// Add fiscal year subtitle (01 Jan to 31 Dec YYYY)
+	fiscalYearStr := fmt.Sprintf("%s: 01 %s - 31 %s %d", fiscalYearLabel, januaryLabel, decemberLabel, fiscalYear)
+	m.AddRow(10,
+		text.NewCol(12, fiscalYearStr,
+			props.Text{
+				Size:  10,
+				Align: align.Center,
+			}),
+	)
+
+	// Spacing
+	m.AddRow(5)
+
+	// Calculate category totals
+	debitMap := make(map[string]float64)  // Expenses (negative amounts)
+	creditMap := make(map[string]float64) // Gains (positive amounts)
+
+	for _, exp := range expenses {
+		category := exp.Category
+		if category == "" {
+			category = "Uncategorized"
+		}
+
+		if exp.Amount < 0 {
+			// Debit (expense)
+			debitMap[category] += math.Abs(exp.Amount)
+		} else if exp.Amount > 0 {
+			// Credit (gain)
+			creditMap[category] += exp.Amount
+		}
+	}
+
+	// Convert maps to sorted slices
+	type CategoryTotal struct {
+		Category string
+		Amount   float64
+	}
+
+	var debits []CategoryTotal
+	for cat, amt := range debitMap {
+		debits = append(debits, CategoryTotal{Category: cat, Amount: amt})
+	}
+
+	var credits []CategoryTotal
+	for cat, amt := range creditMap {
+		credits = append(credits, CategoryTotal{Category: cat, Amount: amt})
+	}
+
+	// Calculate totals
+	totalExpenses := float64(0)
+	for _, d := range debits {
+		totalExpenses += d.Amount
+	}
+
+	totalGains := float64(0)
+	for _, c := range credits {
+		totalGains += c.Amount
+	}
+
+	// Closing balance (Opening Balance + Gains - Expenses)
+	closingBalance := openingBalance + totalGains - totalExpenses
+
+	// Total debits includes expenses + closing balance
+	totalDebits := totalExpenses + closingBalance
+
+	// Total credits includes opening balance + gains
+	totalCredits := openingBalance + totalGains
+
+	// Define border props for table cells - consistent thickness
+	borderThickness := 0.5
+
+	// Header borders (all sides)
+	headerCreditBorder := props.Cell{
+		BorderType:      border.Left | border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+	headerDebitBorder := props.Cell{
+		BorderType:      border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Content borders - CREDIT section (left outer border + right middle separator)
+	creditContentFirstBorder := props.Cell{
+		BorderType:      border.Left | border.Top | border.Right,
+		BorderThickness: borderThickness,
+	}
+	creditContentBorder := props.Cell{
+		BorderType:      border.Left | border.Right,
+		BorderThickness: borderThickness,
+	}
+	creditContentLastBorder := props.Cell{
+		BorderType:      border.Left | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Content borders - DEBIT section (left middle separator + right outer border)
+	debitContentFirstBorder := props.Cell{
+		BorderType:      border.Left | border.Top | border.Right,
+		BorderThickness: borderThickness,
+	}
+	debitContentBorder := props.Cell{
+		BorderType:      border.Left | border.Right,
+		BorderThickness: borderThickness,
+	}
+	debitContentLastBorder := props.Cell{
+		BorderType:      border.Left | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Total row borders
+	totalCreditBorder := props.Cell{
+		BorderType:      border.Left | border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+	totalDebitBorder := props.Cell{
+		BorderType:      border.Left | border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Add table header with borders (CREDIT on left, DEBIT on right)
+	m.AddRow(10,
+		col.New(6).Add(
+			text.New(creditLabel, props.Text{
+				Top:   2,
+				Left:  3,
+				Right: 3,
+				Size:  12,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+		).WithStyle(&headerCreditBorder),
+		col.New(6).Add(
+			text.New(debitLabel, props.Text{
+				Top:   2,
+				Left:  3,
+				Right: 3,
+				Size:  12,
+				Style: fontstyle.Bold,
+				Align: align.Center,
+			}),
+		).WithStyle(&headerDebitBorder),
+	)
+
+	// First row: Opening balance on CREDIT side (BOLD) - now on LEFT
+	openingBalanceText := fmt.Sprintf("%s - %s", accountBalanceLabel, formatCurrencyGo(openingBalance, currency))
+	m.AddRow(8,
+		col.New(6).Add(
+			text.New(openingBalanceText, props.Text{
+				Top:   2,
+				Left:  3,
+				Right: 3,
+				Size:  10,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		).WithStyle(&creditContentFirstBorder),
+		col.New(6).Add(
+			text.New("", props.Text{
+				Size: 9,
+			}),
+		).WithStyle(&debitContentFirstBorder),
+	)
+
+	// Add category rows (CREDIT on left, DEBIT on right)
+	maxRows := len(debits)
+	if len(credits) > maxRows {
+		maxRows = len(credits)
+	}
+
+	for i := 0; i < maxRows; i++ {
+		debitText := ""
+		creditText := ""
+
+		if i < len(debits) {
+			debitText = fmt.Sprintf("%s - %s", debits[i].Category, formatCurrencyGo(debits[i].Amount, currency))
+		}
+
+		if i < len(credits) {
+			creditText = fmt.Sprintf("%s - %s", credits[i].Category, formatCurrencyGo(credits[i].Amount, currency))
+		}
+
+		m.AddRow(7,
+			col.New(6).Add(
+				text.New(creditText, props.Text{
+					Top:   1,
+					Left:  3,
+					Right: 3,
+					Size:  9,
+					Align: align.Left,
+				}),
+			).WithStyle(&creditContentBorder),
+			col.New(6).Add(
+				text.New(debitText, props.Text{
+					Top:   1,
+					Left:  3,
+					Right: 3,
+					Size:  9,
+					Align: align.Left,
+				}),
+			).WithStyle(&debitContentBorder),
+		)
+	}
+
+	// Subtotal row: Sum of categories only (excluding account balances)
+	creditSubtotalText := fmt.Sprintf("%s - %s", totalLabel, formatCurrencyGo(totalGains, currency))
+	debitSubtotalText := fmt.Sprintf("%s - %s", totalLabel, formatCurrencyGo(totalExpenses, currency))
+	m.AddRow(8,
+		col.New(6).Add(
+			text.New(creditSubtotalText, props.Text{
+				Top:   2,
+				Left:  3,
+				Right: 3,
+				Size:  10,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		).WithStyle(&creditContentBorder),
+		col.New(6).Add(
+			text.New(debitSubtotalText, props.Text{
+				Top:   2,
+				Left:  3,
+				Right: 3,
+				Size:  10,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		).WithStyle(&debitContentBorder),
+	)
+
+	// Last row: Closing balance on DEBIT side (BOLD) - now on RIGHT
+	closingBalanceText := fmt.Sprintf("%s - %s", accountBalanceLabel, formatCurrencyGo(closingBalance, currency))
+	m.AddRow(8,
+		col.New(6).Add(
+			text.New("", props.Text{
+				Size: 9,
+			}),
+		).WithStyle(&creditContentLastBorder),
+		col.New(6).Add(
+			text.New(closingBalanceText, props.Text{
+				Top:   2,
+				Left:  3,
+				Right: 3,
+				Size:  10,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		).WithStyle(&debitContentLastBorder),
+	)
+
+	// Add final totals row (CREDIT on left, DEBIT on right)
+	creditTotalText := fmt.Sprintf("%s - %s", totalLabel, formatCurrencyGo(totalCredits, currency))
+	debitTotalText := fmt.Sprintf("%s - %s", totalLabel, formatCurrencyGo(totalDebits, currency))
+	m.AddRow(12,
+		col.New(6).Add(
+			text.New(creditTotalText, props.Text{
+				Top:   3,
+				Left:  3,
+				Right: 3,
+				Size:  11,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		).WithStyle(&totalCreditBorder),
+		col.New(6).Add(
+			text.New(debitTotalText, props.Text{
+				Top:   3,
+				Left:  3,
+				Right: 3,
+				Size:  11,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		).WithStyle(&totalDebitBorder),
 	)
 
 	// Generate PDF bytes
