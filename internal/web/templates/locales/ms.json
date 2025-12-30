@@ -64,7 +64,8 @@
     "add_gain": "Tambah Penerimaan",
     "failed_load": "Gagal memuatkan pengeluaran",
     "download_receipt": "Muat Turun Resit",
-    "download_voucher": "Muat Turun Baucar"
+    "download_voucher": "Muat Turun Baucar",
+    "generate_report": "Jana Laporan"
   },
   "receipt": {
     "title": "Resit Pembayaran",
@@ -162,7 +163,15 @@
     "delete_all": "Padam Semua",
     "edit_recurring": "Kemas Kini Pengeluaran Berulang",
     "update_future": "Kemas Kini Akan Datang",
-    "update_all": "Kemas Kini Semua"
+    "update_all": "Kemas Kini Semua",
+    "generate_report": "Jana Laporan",
+    "select_period": "Pilih tempoh laporan:"
+  },
+  "report": {
+    "title": "Laporan Transaksi",
+    "daily": "Harian",
+    "monthly": "Bulanan",
+    "yearly": "Tahunan"
   },
   "import": {
     "importing": "Mengimport... ini mungkin mengambil sedikit masa untuk fail yang besar.",

@@ -61,6 +61,11 @@ func getLocalizedString(language, key string) string {
 		"document.amount":        "Amount",
 		"table.download_receipt": "Download Receipt",
 		"table.download_voucher": "Download Voucher",
+		// Report keys
+		"report.title":   "Transaction Report",
+		"report.daily":   "Daily",
+		"report.monthly": "Monthly",
+		"report.yearly":  "Yearly",
 	}
 
 	// Return English default for English language

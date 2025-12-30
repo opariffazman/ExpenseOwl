@@ -95,6 +95,7 @@ func runServer(port int) {
 	// Document Generation
 	http.HandleFunc("/receipt/pdf", handler.GenerateReceiptPDF)
 	http.HandleFunc("/voucher/pdf", handler.GenerateVoucherPDF)
+	http.HandleFunc("/report/pdf", handler.GenerateReportPDF)
 
 	log.Println("Starting server on port", port, "...")
 	if err := http.ListenAndServe(fmt.Sprint(":", port), nil); err != nil {

@@ -51,6 +51,9 @@
             <label for="showAllToggle">
                 <input type="checkbox" id="showAllToggle" class="styled-checkbox"> <span data-i18n="table.show_all">Show All Transactions</span>
             </label>
+            <button id="generateReportBtn" class="nav-button" style="margin-left: auto;">
+                <i class="fa-solid fa-file-pdf"></i> <span data-i18n="table.generate_report">Generate Report</span>
+            </button>
         </div>
 
         <div class="form-container">
@@ -127,6 +130,19 @@
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeDeleteModal()" data-i18n="common.cancel">Cancel</button>
                 <button class="modal-button confirm" onclick="confirmDelete()" data-i18n="common.delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="modal.generate_report">Generate Report</h3>
+            <p data-i18n="modal.select_period">Select the report period:</p>
+            <div class="modal-buttons">
+                <button class="modal-button" onclick="generateReport('daily')" data-i18n="report.daily">Daily</button>
+                <button class="modal-button" onclick="generateReport('monthly')" data-i18n="report.monthly">Monthly</button>
+                <button class="modal-button" onclick="generateReport('yearly')" data-i18n="report.yearly">Yearly</button>
+                <button class="modal-button" onclick="closeReportModal()" data-i18n="common.cancel">Cancel</button>
             </div>
         </div>
     </div>
@@ -396,6 +412,43 @@
         document.getElementById('deleteModal').addEventListener('click', (e) => {
             if (e.target.className === 'modal active') {
                 closeDeleteModal();
+            }
+        });
+
+        // Report generation functions
+        function showReportModal() {
+            document.getElementById('reportModal').classList.add('active');
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.remove('active');
+        }
+
+        function generateReport(period) {
+            const transactionType = isViewingGains ? 'gains' : 'expenses';
+            const showAll = document.getElementById('showAllToggle').checked;
+
+            // Build URL with parameters
+            let url = `/report/pdf?type=${transactionType}&period=${period}`;
+
+            // Add date parameters based on showAll toggle
+            if (!showAll) {
+                // Use current month from navigation
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+                url += `&year=${year}&month=${month}`;
+            }
+
+            // Download the report
+            window.location.href = url;
+            closeReportModal();
+        }
+
+        document.getElementById('generateReportBtn').addEventListener('click', showReportModal);
+
+        document.getElementById('reportModal').addEventListener('click', (e) => {
+            if (e.target.className === 'modal active') {
+                closeReportModal();
             }
         });
 
