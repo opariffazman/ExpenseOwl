@@ -68,7 +68,7 @@
     "generate_report": "Jana Laporan"
   },
   "receipt": {
-    "title": "Resit Pembayaran",
+    "title": "Resit Penerimaan",
     "received_from": "Diterima Daripada",
     "transaction_id": "ID Transaksi",
     "details": "Butiran Transaksi",
