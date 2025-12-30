@@ -389,7 +389,26 @@ func (s *jsonStore) AddExpense(expense Expense) error {
 		return fmt.Errorf("failed to read storage file: %v", err)
 	}
 	if expense.ID == "" {
-		expense.ID = uuid.New().String()
+		// Load config to get and update counters
+		config, err := s.readConfigFile(s.configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read config file: %v", err)
+		}
+
+		// Generate ID based on transaction type
+		isGain := expense.Amount > 0
+		if isGain {
+			config.ReceiptCounter++
+			expense.ID = GenerateTransactionID(true, config.ReceiptCounter)
+		} else {
+			config.VoucherCounter++
+			expense.ID = GenerateTransactionID(false, config.VoucherCounter)
+		}
+
+		// Save updated config with new counter
+		if err := s.writeConfigFile(s.configPath, config); err != nil {
+			return fmt.Errorf("failed to save config: %v", err)
+		}
 	}
 	if expense.Currency == "" {
 		expense.Currency = s.defaults["currency"]
@@ -435,6 +454,33 @@ func (s *jsonStore) AddMultipleExpenses(expensesToAdd []Expense) error {
 	if err != nil {
 		return fmt.Errorf("failed to read storage file: %v", err)
 	}
+
+	// Load config to get and update counters
+	config, err := s.readConfigFile(s.configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %v", err)
+	}
+
+	// Generate IDs for expenses that don't have them
+	for i, expense := range expensesToAdd {
+		if expense.ID == "" {
+			// Generate ID based on transaction type
+			isGain := expense.Amount > 0
+			if isGain {
+				config.ReceiptCounter++
+				expensesToAdd[i].ID = GenerateTransactionID(true, config.ReceiptCounter)
+			} else {
+				config.VoucherCounter++
+				expensesToAdd[i].ID = GenerateTransactionID(false, config.VoucherCounter)
+			}
+		}
+	}
+
+	// Save updated config with new counters
+	if err := s.writeConfigFile(s.configPath, config); err != nil {
+		return fmt.Errorf("failed to save config: %v", err)
+	}
+
 	data.Expenses = append(data.Expenses, expensesToAdd...)
 	log.Printf("Added %d new recurring expense instances\n", len(expensesToAdd))
 	return s.writeExpensesFile(s.filePath, data)

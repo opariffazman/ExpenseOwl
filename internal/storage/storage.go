@@ -53,6 +53,8 @@ type Config struct {
 	StartDate         int                `json:"startDate"`
 	Language          string             `json:"language"`
 	RecurringExpenses []RecurringExpense `json:"recurringExpenses"`
+	VoucherCounter    int                `json:"voucherCounter"`    // Counter for BAU (Baucar/voucher) IDs
+	ReceiptCounter    int                `json:"receiptCounter"`    // Counter for RES (Resit/receipt) IDs
 	// Tags              []string           `json:"tags"`
 }
 
@@ -100,6 +102,15 @@ type Expense struct {
 	Amount      float64   `json:"amount"`
 	Currency    string    `json:"currency"`
 	Date        time.Time `json:"date"`
+}
+
+// GenerateTransactionID generates a transaction ID based on whether it's an expense (BAU) or gain (RES)
+func GenerateTransactionID(isGain bool, counter int) string {
+	prefix := "BAU" // Baucar (voucher) for expenses
+	if isGain {
+		prefix = "RES" // Resit (receipt) for gains
+	}
+	return fmt.Sprintf("%s-%04d", prefix, counter)
 }
 
 func (c *Config) SetBaseConfig() {
