@@ -27,7 +27,8 @@
     "close": "Tutup",
     "add": "Tambah",
     "update": "Kemas Kini",
-    "actions": "Tindakan"
+    "actions": "Tindakan",
+    "please_select": "Sila pilih"
   },
   "dashboard": {
     "title": "Papan Pemuka",

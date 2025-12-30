@@ -82,7 +82,8 @@
 
                 <div class="form-group">
                     <label for="method" data-i18n="common.method">Method</label>
-                    <select id="method">
+                    <select id="method" required>
+                        <option value="" disabled selected data-i18n="common.please_select">Please select</option>
                         <option value="cash" data-i18n="method.cash">Cash</option>
                         <option value="transfer" data-i18n="method.transfer">Bank Transfer</option>
                         <option value="cheque" data-i18n="method.cheque">Cheque</option>
@@ -316,9 +317,11 @@
                 if (!configResponse.ok) throw new Error('Failed to fetch configuration');
                 const config = await configResponse.json();
                 const categorySelect = document.getElementById('category');
-                categorySelect.innerHTML = config.categories.map(cat => 
-                    `<option value="${cat}">${cat}</option>`
-                ).join('');
+                categorySelect.innerHTML = `<option value="" disabled selected data-i18n="common.please_select">Please select</option>` +
+                    config.categories.map(cat =>
+                        `<option value="${cat}">${cat}</option>`
+                    ).join('');
+                applyTranslations(); // Apply translations to dynamically added options
                 currentCurrency = config.currency;
                 startDate = config.startDate;
                 
