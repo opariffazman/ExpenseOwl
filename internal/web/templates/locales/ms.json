@@ -188,7 +188,9 @@
   "theme": {
     "system": "Lalai Sistem",
     "light": "Cerah",
-    "dark": "Gelap"
+    "dark": "Gelap",
+    "light_green": "Hijau Cerah",
+    "light_blue": "Biru Cerah"
   },
   "months": {
     "january": "Januari",

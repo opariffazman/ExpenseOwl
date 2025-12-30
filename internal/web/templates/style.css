@@ -26,6 +26,26 @@ html[data-theme='dark'] {
     --border: #1a365d;
 }
 
+/* Light Green theme */
+html[data-theme='light-green'] {
+    --bg-primary: #e8f5e9;
+    --bg-secondary: #f1f8f2;
+    --text-primary: #1b5e20;
+    --text-secondary: #2e7d32;
+    --border: #c8e6c9;
+    --accent: #66bb6a;
+}
+
+/* Light Blue theme */
+html[data-theme='light-blue'] {
+    --bg-primary: #e3f2fd;
+    --bg-secondary: #f1f8fe;
+    --text-primary: #0d47a1;
+    --text-secondary: #1565c0;
+    --border: #bbdefb;
+    --accent: #42a5f5;
+}
+
 /* System preference for light mode (when no theme is set) */
 @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {

@@ -16,6 +16,10 @@
                 document.documentElement.setAttribute('data-theme', 'light');
             } else if (theme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
+            } else if (theme === 'light-green') {
+                document.documentElement.setAttribute('data-theme', 'light-green');
+            } else if (theme === 'light-blue') {
+                document.documentElement.setAttribute('data-theme', 'light-blue');
             }
         })();
     </script>
@@ -88,6 +92,8 @@
                         <option value="system" data-i18n="theme.system">System Default</option>
                         <option value="light" data-i18n="theme.light">Light</option>
                         <option value="dark" data-i18n="theme.dark">Dark</option>
+                        <option value="light-green" data-i18n="theme.light_green">Light Green</option>
+                        <option value="light-blue" data-i18n="theme.light_blue">Light Blue</option>
                     </select>
                 </div>
                 <div id="themeMessage" class="form-message"></div>
@@ -869,6 +875,10 @@
                 document.documentElement.setAttribute('data-theme', 'light');
             } else if (theme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
+            } else if (theme === 'light-green') {
+                document.documentElement.setAttribute('data-theme', 'light-green');
+            } else if (theme === 'light-blue') {
+                document.documentElement.setAttribute('data-theme', 'light-blue');
             } else {
                 document.documentElement.removeAttribute('data-theme');
             }
