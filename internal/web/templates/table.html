@@ -65,13 +65,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="from" data-i18n="common.from">From</label>
-                    <input type="text" id="from">
-                </div>
-
-                <div class="form-group">
-                    <label for="to" data-i18n="common.to">To</label>
-                    <input type="text" id="to">
+                    <label for="party" data-i18n="common.party">Party</label>
+                    <input type="text" id="party">
                 </div>
 
                 <div class="form-group">
@@ -183,8 +178,7 @@
                     <thead>
                         <tr>
                             <th>${t('common.description', 'Description')}</th>
-                            <th>${t('common.from', 'From')}</th>
-                            <th>${t('common.to', 'To')}</th>
+                            <th>${t('common.party', 'Party')}</th>
                             <th>${t('common.method', 'Method')}</th>
                             <th>${t('common.category', 'Category')}</th>
                             <th>${t('common.amount', 'Amount')}</th>
@@ -193,11 +187,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${expenses.map((expense, index) => `
+                        ${expenses.map((expense, index) => {
+                            const party = expense.amount > 0 ? (expense.from || '') : (expense.to || '');
+                            return `
                             <tr>
                                 <td>${escapeHTML(expense.description || '')}</td>
-                                <td>${escapeHTML(expense.from || '')}</td>
-                                <td>${escapeHTML(expense.to || '')}</td>
+                                <td>${escapeHTML(party)}</td>
                                 <td>${t('method.' + (expense.method || 'cash'), expense.method || 'Cash')}</td>
                                 <td>${escapeHTML(expense.category)}</td>
                                 <td class="amount">${formatCurrency(expense.amount)}</td>
@@ -220,7 +215,8 @@
                                     </button>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </tbody>
                 </table>
             `;
@@ -247,9 +243,9 @@
 
         function editExpense(id, description, from, to, method, note, category, amount, date) {
             const isGain = amount > 0;
+            const party = isGain ? (from || '') : (to || '');
             document.getElementById('description').value = description || '';
-            document.getElementById('from').value = from || '';
-            document.getElementById('to').value = to || '';
+            document.getElementById('party').value = party;
             document.getElementById('method').value = method || 'cash';
             document.getElementById('note').value = note || '';
             document.getElementById('category').value = category;
@@ -394,10 +390,11 @@
                 amount *= -1;
             }
 
+            const party = document.getElementById('party').value;
             const formData = {
                 description: document.getElementById('description').value,
-                from: document.getElementById('from').value,
-                to: document.getElementById('to').value,
+                from: isAddingGain ? party : 'PBAKTH',
+                to: isAddingGain ? 'PBAKTH' : party,
                 method: document.getElementById('method').value,
                 note: document.getElementById('note').value,
                 category: document.getElementById('category').value,

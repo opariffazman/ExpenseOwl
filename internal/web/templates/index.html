@@ -74,13 +74,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="from" data-i18n="common.from">From</label>
-                        <input type="text" id="from">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="to" data-i18n="common.to">To</label>
-                        <input type="text" id="to">
+                        <label for="party" data-i18n="common.party">Party</label>
+                        <input type="text" id="party">
                     </div>
 
                     <div class="form-group">
@@ -454,10 +449,11 @@
             if (!isAddingGain) {
                 amount *= -1;
             }
+            const party = document.getElementById('party').value;
             const formData = {
                 description: document.getElementById('description').value,
-                from: document.getElementById('from').value,
-                to: document.getElementById('to').value,
+                from: isAddingGain ? party : 'PBAKTH',
+                to: isAddingGain ? 'PBAKTH' : party,
                 method: document.getElementById('method').value,
                 note: document.getElementById('note').value,
                 category: document.getElementById('category').value,

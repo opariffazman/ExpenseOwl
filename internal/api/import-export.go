@@ -22,6 +22,7 @@ func getLocalizedString(language, key string) string {
 		"common.description": "Description",
 		"common.from":        "From",
 		"common.to":          "To",
+		"common.party":       "Party",
 		"common.method":      "Method",
 		"common.note":        "Note",
 		"common.category":    "Category",
@@ -143,8 +144,7 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	headers := []string{
 		"ID",
 		getLocalizedString(language, "common.description"),
-		getLocalizedString(language, "common.from"),
-		getLocalizedString(language, "common.to"),
+		getLocalizedString(language, "common.party"),
 		getLocalizedString(language, "common.method"),
 		getLocalizedString(language, "common.note"),
 		getLocalizedString(language, "common.category"),
@@ -165,11 +165,18 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		// Localize method value
 		localizedMethod := getLocalizedString(language, "method."+method)
 
+		// Determine party based on transaction type
+		// For gains (positive amount): party is From (where money came from)
+		// For expenses (negative amount): party is To (where money went to)
+		party := expense.To
+		if expense.Amount > 0 {
+			party = expense.From
+		}
+
 		record := []string{
 			expense.ID,
 			expense.Description,
-			expense.From,
-			expense.To,
+			party,
 			localizedMethod,
 			expense.Note,
 			expense.Category,
