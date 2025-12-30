@@ -232,15 +232,6 @@ func addLetterheadHeader(m core.Maroto) {
 		m.AddRow(2) // Small spacing
 	}
 
-	// Registration number below header
-	m.AddRow(6,
-		text.NewCol(12, "(NO. PENDAFTARAN: PPM-008-14-14042009)",
-			props.Text{
-				Size:  8,
-				Align: align.Center,
-			}),
-	)
-
 	// Horizontal line separator after header
 	m.AddRow(5,
 		line.NewCol(12),
@@ -266,7 +257,7 @@ func addLetterheadFooter(m core.Maroto, language string, firstMessageKey string)
 			),
 		),
 		row.New(8).Add(
-			text.NewCol(12, "PERTUBUHAN BEKAS ANGGOTA KUMPULAN TABUNG HAJI (PBAKTH)",
+			text.NewCol(12, "(NO. PENDAFTARAN: PPM-008-14-14042009)",
 				props.Text{
 					Size:  9,
 					Style: fontstyle.Bold,
