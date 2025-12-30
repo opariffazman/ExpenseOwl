@@ -185,12 +185,41 @@ async function fetchLanguage() {
 async function loadTranslations(lang) {
     if (lang === 'en') {
         translations = {};
+        localStorage.removeItem('i18n_translations');
+        localStorage.removeItem('i18n_lang');
         return;
     }
+
+    // Try to load from localStorage first for instant display
+    const cachedLang = localStorage.getItem('i18n_lang');
+    const cachedTranslations = localStorage.getItem('i18n_translations');
+
+    if (cachedLang === lang && cachedTranslations) {
+        try {
+            translations = JSON.parse(cachedTranslations);
+            // Fetch in background to update cache if needed
+            fetch(`/locales/${lang}.json`)
+                .then(response => response.json())
+                .then(data => {
+                    if (JSON.stringify(data) !== cachedTranslations) {
+                        localStorage.setItem('i18n_translations', JSON.stringify(data));
+                        localStorage.setItem('i18n_lang', lang);
+                    }
+                })
+                .catch(() => {});
+            return;
+        } catch (e) {
+            // Cache corrupted, fetch fresh
+        }
+    }
+
     try {
         const response = await fetch(`/locales/${lang}.json`);
         if (response.ok) {
             translations = await response.json();
+            // Cache for next time
+            localStorage.setItem('i18n_translations', JSON.stringify(translations));
+            localStorage.setItem('i18n_lang', lang);
         }
     } catch (error) {
         console.error('Failed to load translations:', error);
@@ -241,6 +270,8 @@ async function initI18n() {
     await fetchLanguage();
     await loadTranslations(currentLanguage);
     applyTranslations();
+    // Show content after translations are ready
+    document.body.style.visibility = 'visible';
 }
 
 async function setLanguage(lang) {
