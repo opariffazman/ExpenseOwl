@@ -497,7 +497,7 @@
                     messageDiv.className = 'form-message success';
                     form.reset();
                     delete form.dataset.editId;
-                    setFormMode(false, false);
+                    setFormMode(isViewingGains, false);
                     await initialize();
                     const today = new Date();
                     const year = today.getFullYear();
