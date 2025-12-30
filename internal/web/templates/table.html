@@ -139,9 +139,11 @@
         let expensesForTable = [];
         let startDate = 1;
         let isAddingGain = false;
+        let isViewingGains = false; // Track whether viewing gains or expenses
 
         function setFormMode(isGain, isEditing = false) {
             isAddingGain = isGain;
+            isViewingGains = isGain;
             const expenseBtn = document.getElementById('expenseModeBtn');
             const gainBtn = document.getElementById('gainModeBtn');
             const submitBtn = document.getElementById('submitBtn');
@@ -155,6 +157,9 @@
                 gainBtn.classList.remove('active');
                 submitBtn.textContent = isEditing ? t('table.update_expense', 'Update Expense') : t('table.add_expense', 'Add Expense');
             }
+
+            // Update the table to show only the selected transaction type
+            updateTable();
         }
 
         document.getElementById('expenseModeBtn').addEventListener('click', () => {
@@ -168,9 +173,16 @@
 
         function createTable(expenses) {
             if (!expenses || expenses.length === 0) {
-                const message = document.getElementById('showAllToggle').checked ?
-                                t('table.no_transactions', 'No transactions found') :
-                                t('table.no_expenses_month', 'No expenses recorded for this month');
+                let message;
+                if (document.getElementById('showAllToggle').checked) {
+                    message = isViewingGains ?
+                              t('table.no_gains_all', 'No gains found') :
+                              t('table.no_expenses_all', 'No expenses found');
+                } else {
+                    message = isViewingGains ?
+                              t('table.no_gains_month', 'No gains recorded for this month') :
+                              t('table.no_expenses_month', 'No expenses recorded for this month');
+                }
                 return `<div class="no-data">${message}</div>`;
             }
             return `
@@ -226,10 +238,16 @@
             const showAll = document.getElementById('showAllToggle').checked;
             document.querySelector('.month-navigation').style.display = showAll ? 'none' : 'flex';
 
-            expensesForTable = showAll
+            // Get expenses for the selected time period
+            let filteredExpenses = showAll
                 ? allExpenses.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
                 : getMonthExpenses(allExpenses);
-            
+
+            // Filter by transaction type (gains or expenses)
+            expensesForTable = filteredExpenses.filter(expense => {
+                return isViewingGains ? expense.amount > 0 : expense.amount < 0;
+            });
+
             const tableContainer = document.getElementById('tableContainer');
             tableContainer.innerHTML = createTable(expensesForTable);
         }
