@@ -148,12 +148,20 @@
             <h2 align="center" data-i18n="settings.recurring_transactions">Recurring Transactions</h2>
             <form id="recurringExpenseForm" class="expense-form recurring-expense-form">
                 <div class="form-group">
-                    <label for="recurringDescription" data-i18n="common.description">Description</label>
-                    <input type="text" id="recurringDescription" required>
+                    <label for="recurringStartDate" data-i18n="recurring.start_date">Start Date</label>
+                    <input type="date" id="recurringStartDate" required>
+                    <script>
+                        const today = new Date();
+                        const year = today.getFullYear();
+                        const month = String(today.getMonth() + 1).padStart(2, '0');
+                        const day = String(today.getDate()).padStart(2, '0');
+                        const formattedDate = `${year}-${month}-${day}`;
+                        document.getElementById('recurringStartDate').value = formattedDate;
+                    </script>
                 </div>
                 <div class="form-group">
-                    <label for="recurringAmount" data-i18n="common.amount">Amount</label>
-                    <input type="number" id="recurringAmount" step="0.01" min="0.01" max="9000000000000000" required>
+                    <label for="recurringCategory" data-i18n="common.category">Category</label>
+                    <select id="recurringCategory" required></select>
                 </div>
                 <div class="form-group">
                     <label for="recurringFrom" data-i18n="common.from">From</label>
@@ -162,6 +170,14 @@
                 <div class="form-group">
                     <label for="recurringTo" data-i18n="common.to">To</label>
                     <input type="text" id="recurringTo">
+                </div>
+                <div class="form-group">
+                    <label for="recurringDescription" data-i18n="common.description">Description</label>
+                    <textarea id="recurringDescription" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="recurringAmount" data-i18n="common.amount">Amount</label>
+                    <input type="number" id="recurringAmount" step="0.01" min="0.01" max="9000000000000000" required>
                 </div>
                 <div class="form-group">
                     <label for="recurringMethod" data-i18n="common.method">Method</label>
@@ -179,10 +195,6 @@
                     <input type="text" id="recurringNote">
                 </div>
                 <div class="form-group">
-                    <label for="recurringCategory" data-i18n="common.category">Category</label>
-                    <select id="recurringCategory" required></select>
-                </div>
-                <div class="form-group">
                     <label for="recurringInterval" data-i18n="recurring.interval">Interval</label>
                     <select id="recurringInterval" required>
                         <option value="daily" data-i18n="recurring.daily">Daily</option>
@@ -190,18 +202,6 @@
                         <option value="monthly" data-i18n="recurring.monthly">Monthly</option>
                         <option value="yearly" data-i18n="recurring.yearly">Yearly</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label for="recurringStartDate" data-i18n="recurring.start_date">Start Date</label>
-                    <input type="date" id="recurringStartDate" required>
-                    <script>
-                        const today = new Date();
-                        const year = today.getFullYear();
-                        const month = String(today.getMonth() + 1).padStart(2, '0');
-                        const day = String(today.getDate()).padStart(2, '0');
-                        const formattedDate = `${year}-${month}-${day}`;
-                        document.getElementById('recurringStartDate').value = formattedDate;
-                    </script>
                 </div>
                 <div class="form-group">
                     <label for="recurringOccurrences" data-i18n="recurring.occurrences">Occurrences</label>
@@ -236,13 +236,13 @@
         <div class="modal-content">
             <h3 data-i18n="modal.edit_recurring">Edit Recurring Expense</h3>
             <form id="editRecurringExpenseForm" class="expense-form recurring-expense-form">
-                 <div class="form-group">
-                    <label for="editRecurringDescription" data-i18n="common.description">Description</label>
-                    <input type="text" id="editRecurringDescription" required>
+                <div class="form-group">
+                    <label for="editRecurringStartDate" data-i18n="recurring.start_date">Start Date</label>
+                    <input type="date" id="editRecurringStartDate" required>
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringAmount" data-i18n="common.amount">Amount</label>
-                    <input type="number" id="editRecurringAmount" step="0.01" min="0" required>
+                    <label for="editRecurringCategory" data-i18n="common.category">Category</label>
+                    <select id="editRecurringCategory" required></select>
                 </div>
                 <div class="form-group">
                     <label for="editRecurringFrom" data-i18n="common.from">From</label>
@@ -251,6 +251,14 @@
                 <div class="form-group">
                     <label for="editRecurringTo" data-i18n="common.to">To</label>
                     <input type="text" id="editRecurringTo">
+                </div>
+                <div class="form-group">
+                    <label for="editRecurringDescription" data-i18n="common.description">Description</label>
+                    <textarea id="editRecurringDescription" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editRecurringAmount" data-i18n="common.amount">Amount</label>
+                    <input type="number" id="editRecurringAmount" step="0.01" min="0" required>
                 </div>
                 <div class="form-group">
                     <label for="editRecurringMethod" data-i18n="common.method">Method</label>
@@ -268,10 +276,6 @@
                     <input type="text" id="editRecurringNote">
                 </div>
                 <div class="form-group">
-                    <label for="editRecurringCategory" data-i18n="common.category">Category</label>
-                    <select id="editRecurringCategory" required></select>
-                </div>
-                <div class="form-group">
                     <label for="editRecurringInterval" data-i18n="recurring.interval">Interval</label>
                     <select id="editRecurringInterval" required>
                         <option value="daily" data-i18n="recurring.daily">Daily</option>
@@ -279,10 +283,6 @@
                         <option value="monthly" data-i18n="recurring.monthly">Monthly</option>
                         <option value="yearly" data-i18n="recurring.yearly">Yearly</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label for="editRecurringStartDate" data-i18n="recurring.start_date">Start Date</label>
-                    <input type="date" id="editRecurringStartDate" required>
                 </div>
                 <div class="form-group">
                     <label for="editRecurringOccurrences" data-i18n="recurring.occurrences_help">Occurrences (0 for indefinite)</label>

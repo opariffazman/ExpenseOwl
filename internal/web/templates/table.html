@@ -71,13 +71,38 @@
             </div>
             <form id="expenseForm" class="expense-form">
                 <div class="form-group">
-                    <label for="description" data-i18n="common.description">Description</label>
-                    <input type="text" id="description" value="-" required>
+                    <label for="date" data-i18n="common.date">Date</label>
+                    <input type="date" id="date" required>
+                    <script>
+                        const today = new Date();
+                        const year = today.getFullYear();
+                        const month = String(today.getMonth() + 1).padStart(2, '0');
+                        const day = String(today.getDate()).padStart(2, '0');
+                        const formattedDate = `${year}-${month}-${day}`;
+                        document.getElementById('date').value = formattedDate;
+                    </script>
+                </div>
+
+                <div class="form-group">
+                    <label for="category" data-i18n="common.category">Category</label>
+                    <select id="category" required>
+                        <option value="" data-i18n="common.categories">categories</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
                     <label for="party" data-i18n="common.party">Party</label>
                     <input type="text" id="party">
+                </div>
+
+                <div class="form-group">
+                    <label for="description" data-i18n="common.description">Description</label>
+                    <textarea id="description" rows="2" required>-</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount" data-i18n="common.amount">Amount</label>
+                    <input type="number" id="amount" step="0.01" min="0.01" max="9000000000000000" required>
                 </div>
 
                 <div class="form-group">
@@ -98,31 +123,6 @@
                     <input type="text" id="note">
                 </div>
 
-                <div class="form-group">
-                    <label for="category" data-i18n="common.category">Category</label>
-                    <select id="category" required>
-                        <option value="" data-i18n="common.categories">categories</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="amount" data-i18n="common.amount">Amount</label>
-                    <input type="number" id="amount" step="0.01" min="0.01" max="9000000000000000" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="date" data-i18n="common.date">Date</label>
-                    <input type="date" id="date" required>
-                    <script>
-                        const today = new Date();
-                        const year = today.getFullYear();
-                        const month = String(today.getMonth() + 1).padStart(2, '0');
-                        const day = String(today.getDate()).padStart(2, '0');
-                        const formattedDate = `${year}-${month}-${day}`;
-                        document.getElementById('date').value = formattedDate;
-                    </script>
-                </div>
-                
                 <button type="submit" id="submitBtn" class="nav-button" data-i18n="table.add_expense">Add Expense</button>
             </form>
             <div id="formMessage" class="form-message"></div>

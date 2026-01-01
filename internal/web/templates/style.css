@@ -898,17 +898,25 @@ header {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     padding: 0.5rem;
     border: 1px solid var(--border);
     border-radius: 4px;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 3rem;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: var(--accent);
 }
