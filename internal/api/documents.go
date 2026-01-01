@@ -994,11 +994,13 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 		periodLabel = strings.Title(period)
 	}
 
-	descriptionLabel := getLocalizedString(language, "common.description")
-	partyLabel := getLocalizedString(language, "common.party")
-	categoryLabel := getLocalizedString(language, "common.category")
-	amountLabel := getLocalizedString(language, "common.amount")
 	dateLabel := getLocalizedString(language, "common.date")
+	categoryLabel := getLocalizedString(language, "common.category")
+	partyLabel := getLocalizedString(language, "common.party")
+	descriptionLabel := getLocalizedString(language, "common.description")
+	amountLabel := getLocalizedString(language, "common.amount")
+	methodLabel := getLocalizedString(language, "common.method")
+	noteLabel := getLocalizedString(language, "common.note")
 	totalLabel := getLocalizedString(language, "dashboard.total")
 	if totalLabel == "dashboard.total" {
 		totalLabel = "Total:"
@@ -1022,8 +1024,19 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 	)
 
 	// Add report type and period
+	// For daily reports, include the date in the title
+	var subtitle string
+	if period == "daily" && len(expenses) > 0 {
+		// Get the date from the first expense and format as DD/MM/YYYY
+		firstDate := expenses[0].Date
+		dateStr := fmt.Sprintf("%02d/%02d/%04d", firstDate.Day(), firstDate.Month(), firstDate.Year())
+		subtitle = fmt.Sprintf("%s - %s - %s", typeLabel, periodLabel, dateStr)
+	} else {
+		subtitle = fmt.Sprintf("%s - %s", typeLabel, periodLabel)
+	}
+
 	m.AddRow(10,
-		text.NewCol(12, fmt.Sprintf("%s - %s", typeLabel, periodLabel),
+		text.NewCol(12, subtitle,
 			props.Text{
 				Size:  12,
 				Align: align.Center,
@@ -1033,50 +1046,197 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 	// Spacing
 	m.AddRow(5)
 
-	// Add table header
-	m.AddRow(8,
-		text.NewCol(3, dateLabel,
-			props.Text{
-				Size:  10,
-				Style: fontstyle.Bold,
-				Align: align.Left,
-			}),
-		text.NewCol(3, descriptionLabel,
-			props.Text{
-				Size:  10,
-				Style: fontstyle.Bold,
-				Align: align.Left,
-			}),
-		text.NewCol(2, partyLabel,
-			props.Text{
-				Size:  10,
-				Style: fontstyle.Bold,
-				Align: align.Left,
-			}),
-		text.NewCol(2, categoryLabel,
-			props.Text{
-				Size:  10,
-				Style: fontstyle.Bold,
-				Align: align.Left,
-			}),
-		text.NewCol(2, amountLabel,
-			props.Text{
-				Size:  10,
-				Style: fontstyle.Bold,
-				Align: align.Right,
-			}),
-	)
+	// Define border props for table cells
+	borderThickness := 0.2
 
-	// Add line separator
-	m.AddRow(2,
-		line.NewCol(12),
-	)
+	// Header borders (all sides)
+	headerBorderLeft := props.Cell{
+		BorderType:      border.Left | border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+	headerBorder := props.Cell{
+		BorderType:      border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Content borders
+	contentBorderLeft := props.Cell{
+		BorderType:      border.Left | border.Right,
+		BorderThickness: borderThickness,
+	}
+	contentBorder := props.Cell{
+		BorderType:      border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Last row borders
+	lastBorderLeft := props.Cell{
+		BorderType:      border.Left | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+	lastBorder := props.Cell{
+		BorderType:      border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Total row borders
+	totalLabelBorder := props.Cell{
+		BorderType:      border.Left | border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+	totalAmountBorder := props.Cell{
+		BorderType:      border.Top | border.Bottom | border.Right,
+		BorderThickness: borderThickness,
+	}
+
+	// Add table header with borders
+	// For daily reports: Category (2), Party (2), Description (3), Amount (2), Method (2), Note (1) = 12 columns
+	// For monthly/yearly: Date (2), Category (2), Party (2), Description (2), Amount (2), Method (1), Note (1) = 12 columns
+	if period == "daily" {
+		// Daily report: no Date column, expand Description to 3 columns
+		m.AddRow(10,
+			col.New(2).Add(
+				text.New(categoryLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorderLeft),
+			col.New(2).Add(
+				text.New(partyLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(3).Add(
+				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(amountLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(1).Add(
+				text.New(noteLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+		)
+	} else {
+		// Monthly/Yearly report: include Date column (2 cols)
+		m.AddRow(10,
+			col.New(2).Add(
+				text.New(dateLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorderLeft),
+			col.New(2).Add(
+				text.New(categoryLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(partyLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(amountLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(1).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(1).Add(
+				text.New(noteLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+		)
+	}
 
 	// Calculate total
 	var total float64
 
-	// Add table rows
-	for _, exp := range expenses {
+	// Add table rows with borders
+	for i, exp := range expenses {
 		party := exp.To
 		if exp.Amount > 0 {
 			party = exp.From
@@ -1084,56 +1244,242 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 
 		total += math.Abs(exp.Amount)
 
-		dateStr := exp.Date.Format("2006-01-02")
+		// Format date as DD/MM/YYYY
+		dateStr := fmt.Sprintf("%02d/%02d/%04d", exp.Date.Day(), exp.Date.Month(), exp.Date.Year())
 
-		m.AddRow(7,
-			text.NewCol(3, dateStr,
-				props.Text{
-					Size:  9,
-					Align: align.Left,
-				}),
-			text.NewCol(3, exp.Description,
-				props.Text{
-					Size:  9,
-					Align: align.Left,
-				}),
-			text.NewCol(2, party,
-				props.Text{
-					Size:  9,
-					Align: align.Left,
-				}),
-			text.NewCol(2, exp.Category,
-				props.Text{
-					Size:  9,
-					Align: align.Left,
-				}),
-			text.NewCol(2, formatCurrencyGo(math.Abs(exp.Amount), currency),
-				props.Text{
-					Size:  9,
-					Align: align.Right,
-				}),
-		)
+		// Get method and localize it
+		method := exp.Method
+		if method == "" {
+			method = "cash"
+		}
+		localizedMethod := getLocalizedString(language, "method."+method)
+
+		// Get note
+		note := exp.Note
+		if note == "" {
+			note = "-"
+		}
+
+		// Calculate row height based on description length
+		// Approximate: 9pt font, ~40 chars per line for description column width
+		// Daily: 3 columns = ~60 chars per line, Monthly: 2 columns = ~40 chars per line
+		var charsPerLine int
+		if period == "daily" {
+			charsPerLine = 60 // 3 columns
+		} else {
+			charsPerLine = 40 // 2 columns
+		}
+
+		descriptionLines := len(exp.Description) / charsPerLine
+		if len(exp.Description)%charsPerLine > 0 {
+			descriptionLines++
+		}
+		if descriptionLines < 1 {
+			descriptionLines = 1
+		}
+
+		// Base row height is 7, add ~5 per additional line
+		rowHeight := 7.0
+		if descriptionLines > 1 {
+			rowHeight = 7.0 + float64(descriptionLines-1)*5.0
+		}
+
+		// Determine if this is the last row
+		isLastRow := (i == len(expenses)-1)
+
+		borderLeft := contentBorderLeft
+		border := contentBorder
+
+		if isLastRow {
+			borderLeft = lastBorderLeft
+			border = lastBorder
+		}
+
+		// Daily report: no Date column, Description gets 3 columns
+		if period == "daily" {
+			m.AddRow(rowHeight,
+				col.New(2).Add(
+					text.New(exp.Category, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&borderLeft),
+				col.New(2).Add(
+					text.New(party, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(3).Add(
+					text.New(exp.Description, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(formatCurrencyGo(math.Abs(exp.Amount), currency), props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Right,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(1).Add(
+					text.New(note, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+			)
+		} else {
+			// Monthly/Yearly report: Date gets 2 columns, Method gets 1 column
+			m.AddRow(rowHeight,
+				col.New(2).Add(
+					text.New(dateStr, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&borderLeft),
+				col.New(2).Add(
+					text.New(exp.Category, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(party, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(exp.Description, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(formatCurrencyGo(math.Abs(exp.Amount), currency), props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Right,
+					}),
+				).WithStyle(&border),
+				col.New(1).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(1).Add(
+					text.New(note, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+			)
+		}
 	}
 
-	// Add total
-	m.AddRow(2,
-		line.NewCol(12),
-	)
-
-	m.AddRow(10,
-		text.NewCol(10, totalLabel,
-			props.Text{
-				Size:  11,
-				Style: fontstyle.Bold,
-				Align: align.Right,
-			}),
-		text.NewCol(2, formatCurrencyGo(total, currency),
-			props.Text{
-				Size:  11,
-				Style: fontstyle.Bold,
-				Align: align.Right,
-			}),
-	)
+	// Add total row with borders
+	if period == "daily" {
+		// Daily: total label spans 9 cols (Category to Method), amount in 2 cols, note in 1 col
+		// Category (2) + Party (2) + Description (3) + Amount (2) + Method (2) + Note (1) = 12 cols
+		m.AddRow(12,
+			col.New(9).Add(
+				text.New(totalLabel, props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalLabelBorder),
+			col.New(2).Add(
+				text.New(formatCurrencyGo(total, currency), props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalAmountBorder),
+			col.New(1).Add(
+				text.New("", props.Text{
+					Size: 9,
+				}),
+			).WithStyle(&totalAmountBorder),
+		)
+	} else {
+		// Monthly/Yearly: total label spans 10 cols (Date to Method), amount in 2 cols
+		// Date (2) + Category (2) + Party (2) + Description (2) + Amount (2) + Method (1) + Note (1) = 12 cols
+		m.AddRow(12,
+			col.New(10).Add(
+				text.New(totalLabel, props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalLabelBorder),
+			col.New(2).Add(
+				text.New(formatCurrencyGo(total, currency), props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalAmountBorder),
+		)
+	}
 
 	// Generate PDF bytes
 	doc, err := m.Generate()
