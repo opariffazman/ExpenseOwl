@@ -214,26 +214,32 @@
                 <table class="expense-table">
                     <thead>
                         <tr>
-                            <th>${t('common.description', 'Description')}</th>
-                            <th>${t('common.party', 'Party')}</th>
-                            <th>${t('common.method', 'Method')}</th>
-                            <th>${t('common.category', 'Category')}</th>
-                            <th>${t('common.amount', 'Amount')}</th>
                             <th class="date-header">${t('common.date', 'Date')}</th>
+                            <th>${t('common.category', 'Category')}</th>
+                            <th>${t('common.party', 'Party')}</th>
+                            <th>${t('common.description', 'Description')}</th>
+                            <th>${t('common.amount', 'Amount')}</th>
+                            <th>${t('common.method', 'Method')}</th>
+                            <th>${t('common.note', 'Note')}</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         ${expenses.map((expense, index) => {
                             const party = expense.amount > 0 ? (expense.from || '') : (expense.to || '');
+                            const description = expense.description || '';
+                            const truncatedDescription = description.length > 30 ? description.substring(0, 30) + '...' : description;
+                            const note = expense.note || '';
+                            const truncatedNote = note.length > 20 ? note.substring(0, 20) + '...' : note;
                             return `
                             <tr>
-                                <td>${escapeHTML(expense.description || '')}</td>
-                                <td>${escapeHTML(party)}</td>
-                                <td>${t('method.' + (expense.method || 'cash'), expense.method || 'Cash')}</td>
-                                <td>${escapeHTML(expense.category)}</td>
-                                <td class="amount">${formatCurrency(expense.amount)}</td>
                                 <td class="date-column">${formatDateFromUTC(expense.date)}</td>
+                                <td>${escapeHTML(expense.category)}</td>
+                                <td>${escapeHTML(party)}</td>
+                                <td title="${escapeHTML(description)}">${escapeHTML(truncatedDescription)}</td>
+                                <td class="amount">${formatCurrency(expense.amount)}</td>
+                                <td>${t('method.' + (expense.method || 'cash'), expense.method || 'Cash')}</td>
+                                <td title="${escapeHTML(note)}">${escapeHTML(truncatedNote)}</td>
                                 <td>
                                     ${expense.amount > 0 ? `
                                         <button class="receipt-button" onclick="downloadReceipt('${expense.id}')" title="${t('table.download_receipt', 'Download Receipt')}">

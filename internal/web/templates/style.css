@@ -303,6 +303,14 @@ header {
     color: var(--text-secondary);
 }
 
+.expense-table td:nth-child(4),
+.expense-table td:nth-child(7) {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .delete-button, .edit-button {
     background: none;
     border: none;
@@ -807,6 +815,11 @@ header {
     .date-header,
     .tags-column {
         display: none;
+    }
+
+    .expense-table td:nth-child(4),
+    .expense-table td:nth-child(7) {
+        max-width: 120px;
     }
 
     .expense-table th,
