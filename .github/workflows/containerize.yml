@@ -2,15 +2,8 @@ name: containerize
 
 on:
   push:
-    paths-ignore:
-      - "**/*.md"
-      - "assets"
-    branches: [modified]
-  pull_request:
-    branches: [modified]
-    paths-ignore:
-      - "**/*.md"
-      - "assets"
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -26,10 +19,14 @@ jobs:
       - name: login-ghcr
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      - name: extract-version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
       - name: build-docker-image
         run: |
           REPO_PREFIX_LOWER=$(echo "$REPO_PREFIX" | tr '[:upper:]' '[:lower:]')
-          docker build -t $REPO_PREFIX_LOWER:${{ github.sha }} -f Dockerfile .
-          docker push $REPO_PREFIX_LOWER:${{ github.sha }}
-          docker tag $REPO_PREFIX_LOWER:${{ github.sha }} $REPO_PREFIX_LOWER:latest
+          docker build -t $REPO_PREFIX_LOWER:${{ steps.version.outputs.VERSION }} -f Dockerfile .
+          docker push $REPO_PREFIX_LOWER:${{ steps.version.outputs.VERSION }}
+          docker tag $REPO_PREFIX_LOWER:${{ steps.version.outputs.VERSION }} $REPO_PREFIX_LOWER:latest
           docker push $REPO_PREFIX_LOWER:latest
