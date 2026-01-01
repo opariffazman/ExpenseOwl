@@ -33,12 +33,6 @@
             align-items: center;
             gap: 10px;
         }
-        .income-section h2 {
-            color: #28a745;
-        }
-        .expense-section h2 {
-            color: #dc3545;
-        }
         .no-data {
             text-align: center;
             padding: 40px;
@@ -61,7 +55,7 @@
             font-size: 0.8em;
         }
         .expense-table td.amount,
-        .expense-table th:last-child,
+        .expense-table th.amount,
         .expense-table tfoot td:last-child {
             text-align: right;
         }
@@ -114,14 +108,9 @@
             </button>
         </div>
 
-        <div class="summary-section expense-section">
-            <h2><i class="fa-solid fa-arrow-down"></i> <span data-i18n="summary.expense_breakdown">Expense Breakdown</span></h2>
-            <div id="expenseTableContainer"></div>
-        </div>
-
-        <div class="summary-section income-section">
-            <h2><i class="fa-solid fa-arrow-up"></i> <span data-i18n="summary.income_breakdown">Income Breakdown</span></h2>
-            <div id="incomeTableContainer"></div>
+        <div class="summary-section">
+            <h2><i class="fa-solid fa-chart-column"></i> <span data-i18n="summary.category_summary">Category Summary</span></h2>
+            <div id="summaryTableContainer"></div>
         </div>
     </div>
 
@@ -131,63 +120,49 @@
         let currentDate = new Date();
         let allExpenses = [];
         let startDate = 1;
-        let sortColumn = 'total';
+        let sortColumn = 'balance';
         let sortAscending = false;
 
         function calculateCategorySummary(expenses) {
-            const incomeMap = new Map();
-            const expenseMap = new Map();
+            const categoryMap = new Map();
 
             expenses.forEach(exp => {
                 const amount = exp.amount;
                 const category = exp.category || 'Uncategorized';
 
-                if (amount > 0) {
-                    // Income
-                    if (!incomeMap.has(category)) {
-                        incomeMap.set(category, { total: 0, count: 0 });
-                    }
-                    const entry = incomeMap.get(category);
-                    entry.total += amount;
-                    entry.count += 1;
-                } else if (amount < 0) {
-                    // Expense
-                    if (!expenseMap.has(category)) {
-                        expenseMap.set(category, { total: 0, count: 0 });
-                    }
-                    const entry = expenseMap.get(category);
-                    entry.total += Math.abs(amount);
-                    entry.count += 1;
+                if (!categoryMap.has(category)) {
+                    categoryMap.set(category, { gains: 0, expenses: 0, balance: 0 });
                 }
+                const entry = categoryMap.get(category);
+
+                if (amount > 0) {
+                    entry.gains += amount;
+                } else if (amount < 0) {
+                    entry.expenses += Math.abs(amount);
+                }
+                entry.balance = entry.gains - entry.expenses;
             });
 
-            // Convert to arrays and calculate percentages
-            const totalIncome = Array.from(incomeMap.values()).reduce((sum, e) => sum + e.total, 0);
-            const totalExpenses = Array.from(expenseMap.values()).reduce((sum, e) => sum + e.total, 0);
+            // Convert to array and calculate totals
+            let totalGains = 0;
+            let totalExpenses = 0;
 
-            const incomeData = Array.from(incomeMap.entries()).map(([category, data]) => ({
-                category,
-                total: data.total,
-                count: data.count,
-                average: data.count > 0 ? data.total / data.count : 0,
-                percentage: totalIncome > 0 ? (data.total / totalIncome) * 100 : 0
-            }));
-
-            const expenseData = Array.from(expenseMap.entries()).map(([category, data]) => ({
-                category,
-                total: data.total,
-                count: data.count,
-                average: data.count > 0 ? data.total / data.count : 0,
-                percentage: totalExpenses > 0 ? (data.total / totalExpenses) * 100 : 0
-            }));
+            const categoryData = Array.from(categoryMap.entries()).map(([category, data]) => {
+                totalGains += data.gains;
+                totalExpenses += data.expenses;
+                return {
+                    category,
+                    gains: data.gains,
+                    expenses: data.expenses,
+                    balance: data.balance
+                };
+            });
 
             return {
-                incomeData,
-                expenseData,
-                totalIncome,
+                categoryData,
+                totalGains,
                 totalExpenses,
-                netBalance: totalIncome - totalExpenses,
-                savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0
+                netBalance: totalGains - totalExpenses
             };
         }
 
@@ -207,37 +182,39 @@
             });
         }
 
-        function createSummaryTable(data, type) {
+        function createSummaryTable(data, summary) {
             if (!data || data.length === 0) {
-                const messageKey = type === 'expenses' ? 'summary.no_expenses' : 'summary.no_income';
-                const fallback = `No ${type} recorded for this month`;
-                return `<div class="no-data">${t(messageKey, fallback)}</div>`;
+                return `<div class="no-data">${t('summary.no_data', 'No data recorded for this month')}</div>`;
             }
 
             const sortedData = sortTableData(data, sortColumn, sortAscending);
-            const total = sortedData.reduce((sum, row) => sum + row.total, 0);
-            const totalLabel = type === 'expenses' ? t('summary.total_expenses', 'TOTAL EXPENSES') : t('summary.total_income', 'TOTAL INCOME');
 
             return `
                 <table class="expense-table">
                     <thead>
                         <tr>
                             <th onclick="handleSort('category')" class="${sortColumn === 'category' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.category', 'Category')}</th>
-                            <th onclick="handleSort('total')" class="${sortColumn === 'total' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.amount', 'Amount')}</th>
+                            <th onclick="handleSort('gains')" class="amount ${sortColumn === 'gains' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.gains', 'Gains')}</th>
+                            <th onclick="handleSort('expenses')" class="amount ${sortColumn === 'expenses' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.expenses', 'Expenses')}</th>
+                            <th onclick="handleSort('balance')" class="amount ${sortColumn === 'balance' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.balance', 'Balance')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${sortedData.map(row => `
                             <tr>
                                 <td>${escapeHTML(row.category)}</td>
-                                <td class="amount">${formatCurrency(row.total)}</td>
+                                <td class="amount">${row.gains > 0 ? formatCurrency(row.gains) : '-'}</td>
+                                <td class="amount">${row.expenses > 0 ? formatCurrency(row.expenses) : '-'}</td>
+                                <td class="amount" style="color: ${row.balance >= 0 ? '#28a745' : '#dc3545'}; font-weight: bold;">${formatCurrency(row.balance)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                         <tr style="font-weight: bold;">
-                            <td>${totalLabel}</td>
-                            <td class="amount">${formatCurrency(total)}</td>
+                            <td>${t('summary.total', 'TOTAL')}</td>
+                            <td class="amount">${formatCurrency(summary.totalGains)}</td>
+                            <td class="amount">${formatCurrency(summary.totalExpenses)}</td>
+                            <td class="amount" style="color: ${summary.netBalance >= 0 ? '#28a745' : '#dc3545'};">${formatCurrency(summary.netBalance)}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -269,8 +246,7 @@
             const expensesToShow = showLatest ? getLatestExpenses(allExpenses) : getMonthExpenses(allExpenses);
             const summary = calculateCategorySummary(expensesToShow);
 
-            document.getElementById('expenseTableContainer').innerHTML = createSummaryTable(summary.expenseData, 'expenses');
-            document.getElementById('incomeTableContainer').innerHTML = createSummaryTable(summary.incomeData, 'income');
+            document.getElementById('summaryTableContainer').innerHTML = createSummaryTable(summary.categoryData, summary);
         }
 
         function updateMonthDisplayCustom() {
@@ -306,8 +282,7 @@
             } catch (error) {
                 console.error('Failed to initialize summary:', error);
                 const errorMsg = `<div class="no-data">${t('messages.failed_load', 'Failed to load summary data')}</div>`;
-                document.getElementById('expenseTableContainer').innerHTML = errorMsg;
-                document.getElementById('incomeTableContainer').innerHTML = errorMsg;
+                document.getElementById('summaryTableContainer').innerHTML = errorMsg;
             }
         }
 
