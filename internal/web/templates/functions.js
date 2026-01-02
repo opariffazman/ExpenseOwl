@@ -279,12 +279,8 @@ async function setLanguage(lang) {
             body: JSON.stringify(lang)
         });
         if (response.ok) {
-            currentLanguage = lang;
-            await loadTranslations(lang);
-            applyTranslations();
-            if (typeof updateMonthDisplay === 'function') {
-                updateMonthDisplay();
-            }
+            // Always reload the page for consistent behavior across all languages
+            location.reload();
             return true;
         }
     } catch (error) {
