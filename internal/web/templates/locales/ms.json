@@ -28,7 +28,9 @@
     "add": "Tambah",
     "update": "Kemas Kini",
     "actions": "Tindakan",
-    "please_select": "Sila pilih"
+    "please_select": "Sila pilih",
+    "next": "Seterusnya",
+    "back": "Kembali"
   },
   "dashboard": {
     "title": "Papan Pemuka",
@@ -177,10 +179,13 @@
     "update_future": "Kemas Kini Akan Datang",
     "update_all": "Kemas Kini Semua",
     "generate_report": "Jana Laporan",
-    "select_period": "Pilih tempoh laporan:"
+    "select_category": "Pilih kategori:",
+    "select_period": "Pilih tempoh laporan:",
+    "please_select_category": "Sila pilih kategori terlebih dahulu"
   },
   "report": {
     "title": "Laporan Transaksi",
+    "all_categories": "Semua Kategori",
     "daily": "Harian",
     "monthly": "Bulanan",
     "yearly": "Tahunan"

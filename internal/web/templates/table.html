@@ -146,12 +146,22 @@
     <div id="reportModal" class="modal">
         <div class="modal-content">
             <h3 data-i18n="modal.generate_report">Generate Report</h3>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="reportCategory" data-i18n="modal.select_category">Choose a category:</label>
+                <select id="reportCategory" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 5px;">
+                    <option value="" disabled selected data-i18n="common.please_select">Please select</option>
+                </select>
+            </div>
+
             <p data-i18n="modal.select_period">Select the report period:</p>
-            <div class="modal-buttons">
-                <button class="modal-button" onclick="generateReport('daily')" data-i18n="report.daily">Daily</button>
-                <button class="modal-button" onclick="generateReport('monthly')" data-i18n="report.monthly">Monthly</button>
-                <button class="modal-button" onclick="generateReport('yearly')" data-i18n="report.yearly">Yearly</button>
-                <button class="modal-button" onclick="closeReportModal()" data-i18n="common.cancel">Cancel</button>
+            <div class="modal-buttons" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="modal-button" onclick="generateReport('daily')" data-i18n="report.daily">Daily</button>
+                    <button class="modal-button" onclick="generateReport('monthly')" data-i18n="report.monthly">Monthly</button>
+                    <button class="modal-button" onclick="generateReport('yearly')" data-i18n="report.yearly">Yearly</button>
+                </div>
+                <button class="modal-button" onclick="closeReportModal()" style="background-color: #dc3545; color: white;" data-i18n="common.cancel">Cancel</button>
             </div>
         </div>
     </div>
@@ -327,6 +337,16 @@
                     config.categories.map(cat =>
                         `<option value="${cat}">${cat}</option>`
                     ).join('');
+
+                // Populate report category dropdown
+                const reportCategorySelect = document.getElementById('reportCategory');
+                reportCategorySelect.innerHTML =
+                    `<option value="" disabled selected data-i18n="common.please_select">Please select</option>` +
+                    `<option value="__ALL__" data-i18n="report.all_categories">All Categories</option>` +
+                    config.categories.map(cat =>
+                        `<option value="${cat}">${cat}</option>`
+                    ).join('');
+
                 applyTranslations(); // Apply translations to dynamically added options
                 currentCurrency = config.currency;
                 startDate = config.startDate;
@@ -439,14 +459,29 @@
 
         function closeReportModal() {
             document.getElementById('reportModal').classList.remove('active');
+            // Reset category selection
+            document.getElementById('reportCategory').value = '';
         }
 
         function generateReport(period) {
+            const categoryValue = document.getElementById('reportCategory').value;
+
+            // Validate category selection
+            if (!categoryValue) {
+                alert(t('modal.please_select_category', 'Please select a category first'));
+                return;
+            }
+
             const transactionType = isViewingGains ? 'gains' : 'expenses';
             const showAll = document.getElementById('showAllToggle').checked;
 
             // Build URL with parameters
             let url = `/report/pdf?type=${transactionType}&period=${period}`;
+
+            // Add category parameter if a specific category is selected (not "All Categories")
+            if (categoryValue !== '__ALL__') {
+                url += `&category=${encodeURIComponent(categoryValue)}`;
+            }
 
             // Add date parameters based on showAll toggle
             if (!showAll) {
