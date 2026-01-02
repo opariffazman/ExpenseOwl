@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/tanq16/expenseowl/internal/storage"
@@ -172,25 +171,6 @@ func (h *Handler) RenameCategory(w http.ResponseWriter, r *http.Request) {
 			if err := h.storage.UpdateExpense(expense.ID, expense); err != nil {
 				writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to update expense"})
 				log.Printf("API ERROR: Failed to update expense %s: %v\n", expense.ID, err)
-				return
-			}
-		}
-	}
-
-	// Update all recurring expenses with the old category
-	recurringExpenses, err := h.storage.GetRecurringExpenses()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to get recurring expenses"})
-		log.Printf("API ERROR: Failed to get recurring expenses: %v\n", err)
-		return
-	}
-
-	for _, re := range recurringExpenses {
-		if re.Category == payload.OldName {
-			re.Category = newName
-			if err := h.storage.UpdateRecurringExpense(re.ID, re, false); err != nil {
-				writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to update recurring expense"})
-				log.Printf("API ERROR: Failed to update recurring expense %s: %v\n", re.ID, err)
 				return
 			}
 		}
@@ -501,95 +481,6 @@ func (h *Handler) DeleteMultipleExpenses(w http.ResponseWriter, r *http.Request)
 	if err := h.storage.RemoveMultipleExpenses(payload.IDs); err != nil {
 		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to delete multiple expenses"})
 		log.Printf("API ERROR: Failed to delete multiple expenses: %v\n", err)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
-}
-
-// ------------------------------------------------------------
-// Recurring Expense Handlers
-// ------------------------------------------------------------
-
-func (h *Handler) AddRecurringExpense(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
-		return
-	}
-	var re storage.RecurringExpense
-	if err := json.NewDecoder(r.Body).Decode(&re); err != nil {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
-		return
-	}
-	if err := re.Validate(); err != nil {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-		return
-	}
-	if err := h.storage.AddRecurringExpense(re); err != nil {
-		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to add recurring expense"})
-		log.Printf("API ERROR: Failed to add recurring expense: %v\n", err)
-		return
-	}
-	writeJSON(w, http.StatusCreated, re)
-}
-
-func (h *Handler) GetRecurringExpenses(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
-		return
-	}
-	res, err := h.storage.GetRecurringExpenses()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to get recurring expenses"})
-		log.Printf("API ERROR: Failed to get recurring expenses: %v\n", err)
-		return
-	}
-	writeJSON(w, http.StatusOK, res)
-}
-
-func (h *Handler) UpdateRecurringExpense(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
-		return
-	}
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ID parameter is required"})
-		return
-	}
-	updateAll, _ := strconv.ParseBool(r.URL.Query().Get("updateAll"))
-
-	var re storage.RecurringExpense
-	if err := json.NewDecoder(r.Body).Decode(&re); err != nil {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
-		return
-	}
-	if err := re.Validate(); err != nil {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-		return
-	}
-	if err := h.storage.UpdateRecurringExpense(id, re, updateAll); err != nil {
-		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to update recurring expense"})
-		log.Printf("API ERROR: Failed to update recurring expense: %v\n", err)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
-}
-
-func (h *Handler) DeleteRecurringExpense(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
-		return
-	}
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ID parameter is required"})
-		return
-	}
-	removeAll, _ := strconv.ParseBool(r.URL.Query().Get("removeAll"))
-
-	if err := h.storage.RemoveRecurringExpense(id, removeAll); err != nil {
-		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to delete recurring expense"})
-		log.Printf("API ERROR: Failed to delete recurring expense: %v\n", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})

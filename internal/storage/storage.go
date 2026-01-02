@@ -31,13 +31,6 @@ type Storage interface {
 	GetManualBalances() (map[string]float64, error)
 	UpdateManualBalances(balances map[string]float64) error
 
-	// Recurring Expenses
-	GetRecurringExpenses() ([]RecurringExpense, error)
-	GetRecurringExpense(id string) (RecurringExpense, error)
-	AddRecurringExpense(recurringExpense RecurringExpense) error
-	RemoveRecurringExpense(id string, removeAll bool) error
-	UpdateRecurringExpense(id string, recurringExpense RecurringExpense, updateAll bool) error
-
 	// Expenses
 	GetAllExpenses() ([]Expense, error)
 	GetExpense(id string) (Expense, error)
@@ -58,28 +51,12 @@ type Config struct {
 	Currency          string             `json:"currency"`
 	StartDate         int                `json:"startDate"`
 	Language          string             `json:"language"`
-	RecurringExpenses []RecurringExpense `json:"recurringExpenses"`
 	VoucherCounter    int                `json:"voucherCounter"`    // Counter for BAU (Baucar/voucher) IDs
 	ReceiptCounter    int                `json:"receiptCounter"`    // Counter for RES (Resit/receipt) IDs
 	OpeningBalance    float64            `json:"openingBalance"`    // Opening balance for statement generation
 	UseManualBalances bool               `json:"useManualBalances"` // Toggle for manual category balances feature
 	ManualBalances    map[string]float64 `json:"manualBalances"`    // Manual final balances per category
 	// Tags              []string           `json:"tags"`
-}
-
-type RecurringExpense struct {
-	ID          string    `json:"id"`
-	Description string    `json:"description"`
-	Amount      float64   `json:"amount"`
-	Currency    string    `json:"currency"`
-	From        string    `json:"from"`
-	To          string    `json:"to"`
-	Method      string    `json:"method"`
-	Note        string    `json:"note"` // Required for cheque and transfer methods
-	Category    string    `json:"category"`
-	StartDate   time.Time `json:"startDate"`   // date of the first occurrence
-	Interval    string    `json:"interval"`    // daily, weekly, monthly, yearly
-	Occurrences int       `json:"occurrences"` // 0 for 3000 occurrences (heuristic)
 }
 
 type BackendType string
@@ -101,7 +78,6 @@ type SystemConfig struct {
 // expense struct
 type Expense struct {
 	ID          string    `json:"id"`
-	RecurringID string    `json:"recurringID"`
 	Description string    `json:"description"`
 	From        string    `json:"from"`
 	To          string    `json:"to"`
@@ -128,7 +104,6 @@ func (c *Config) SetBaseConfig() {
 	c.StartDate = 1
 	c.Language = "en"
 	// c.Tags = []string{}
-	c.RecurringExpenses = []RecurringExpense{}
 }
 
 func (c *SystemConfig) SetStorageConfig() {
@@ -216,35 +191,6 @@ func (e *Expense) Validate() error {
 	// }
 	if e.Date.IsZero() {
 		return fmt.Errorf("expense 'date' cannot be empty")
-	}
-	return nil
-}
-
-func (e *RecurringExpense) Validate() error {
-	e.Description = SanitizeString(e.Description)
-	if e.Description == "" {
-		return fmt.Errorf("recurring expense 'description' cannot be empty")
-	}
-	e.From = SanitizeString(e.From)
-	e.To = SanitizeString(e.To)
-	e.Method = SanitizeString(e.Method)
-	if e.Category == "" {
-		return fmt.Errorf("recurring expense 'category' cannot be empty")
-	}
-	if e.Occurrences < 2 {
-		return fmt.Errorf("at least 2 occurences required to recur")
-	}
-	if e.StartDate.IsZero() {
-		return fmt.Errorf("start date for recurring expense must be specified")
-	}
-	validIntervals := map[string]bool{
-		"daily":   true,
-		"weekly":  true,
-		"monthly": true,
-		"yearly":  true,
-	}
-	if !validIntervals[e.Interval] {
-		return fmt.Errorf("invalid interval: '%s'. Must be one of 'daily', 'weekly', 'monthly', or 'yearly'", e.Interval)
 	}
 	return nil
 }

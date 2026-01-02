@@ -87,12 +87,6 @@ func runServer(port int) {
 	http.HandleFunc("/expense/delete", handler.DeleteExpense)           // DELETE for single
 	http.HandleFunc("/expenses/delete", handler.DeleteMultipleExpenses) // DELETE for multiple
 
-	// Recurring Expenses
-	http.HandleFunc("/recurring-expense", handler.AddRecurringExpense)           // PUT for add
-	http.HandleFunc("/recurring-expenses", handler.GetRecurringExpenses)         // GET all
-	http.HandleFunc("/recurring-expense/edit", handler.UpdateRecurringExpense)   // PUT for edit
-	http.HandleFunc("/recurring-expense/delete", handler.DeleteRecurringExpense) // DELETE
-
 	// Import/Export
 	http.HandleFunc("/export/csv", handler.ExportCSV)
 	http.HandleFunc("/import/csv", handler.ImportCSV)

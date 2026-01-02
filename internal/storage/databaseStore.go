@@ -8,7 +8,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -23,7 +22,6 @@ const (
 	createExpensesTableSQL = `
 	CREATE TABLE IF NOT EXISTS expenses (
 		id VARCHAR(36) PRIMARY KEY,
-		recurring_id VARCHAR(36),
 		description VARCHAR(255) NOT NULL,
 		"from" VARCHAR(255),
 		"to" VARCHAR(255),
@@ -33,22 +31,6 @@ const (
 		amount NUMERIC(10, 2) NOT NULL,
 		currency VARCHAR(3) NOT NULL,
 		date TIMESTAMPTZ NOT NULL
-	);`
-
-	createRecurringExpensesTableSQL = `
-	CREATE TABLE IF NOT EXISTS recurring_expenses (
-		id VARCHAR(36) PRIMARY KEY,
-		description VARCHAR(255) NOT NULL,
-		amount NUMERIC(10, 2) NOT NULL,
-		currency VARCHAR(3) NOT NULL,
-		"from" VARCHAR(255),
-		"to" VARCHAR(255),
-		method VARCHAR(50),
-		note TEXT,
-		category VARCHAR(255) NOT NULL,
-		start_date TIMESTAMPTZ NOT NULL,
-		interval VARCHAR(50) NOT NULL,
-		occurrences INTEGER NOT NULL
 	);`
 
 	createConfigTableSQL = `
@@ -87,7 +69,7 @@ func makeDBURL(baseConfig SystemConfig) string {
 }
 
 func createTables(db *sql.DB) error {
-	for _, query := range []string{createExpensesTableSQL, createRecurringExpensesTableSQL, createConfigTableSQL} {
+	for _, query := range []string{createExpensesTableSQL, createConfigTableSQL} {
 		if _, err := db.Exec(query); err != nil {
 			return err
 		}
@@ -174,12 +156,6 @@ func (s *databaseStore) GetConfig() (*Config, error) {
 	if err := json.Unmarshal([]byte(manualBalancesStr), &config.ManualBalances); err != nil {
 		return nil, fmt.Errorf("failed to parse manual balances from db: %v", err)
 	}
-
-	recurring, err := s.GetRecurringExpenses()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get recurring expenses for config: %v", err)
-	}
-	config.RecurringExpenses = recurring
 
 	return &config, nil
 }
@@ -307,13 +283,10 @@ func (s *databaseStore) UpdateManualBalances(balances map[string]float64) error 
 
 func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {
 	var expense Expense
-	var recurringID, fromStr, toStr, methodStr, noteStr sql.NullString
-	err := scanner.Scan(&expense.ID, &recurringID, &expense.Description, &fromStr, &toStr, &methodStr, &noteStr, &expense.Category, &expense.Amount, &expense.Date)
+	var fromStr, toStr, methodStr, noteStr sql.NullString
+	err := scanner.Scan(&expense.ID, &expense.Description, &fromStr, &toStr, &methodStr, &noteStr, &expense.Category, &expense.Amount, &expense.Date)
 	if err != nil {
 		return Expense{}, err
-	}
-	if recurringID.Valid {
-		expense.RecurringID = recurringID.String
 	}
 	if fromStr.Valid {
 		expense.From = fromStr.String
@@ -331,7 +304,7 @@ func scanExpense(scanner interface{ Scan(...any) error }) (Expense, error) {
 }
 
 func (s *databaseStore) GetAllExpenses() ([]Expense, error) {
-	query := `SELECT id, recurring_id, description, "from", "to", method, note, category, amount, date FROM expenses ORDER BY date DESC`
+	query := `SELECT id, description, "from", "to", method, note, category, amount, date FROM expenses ORDER BY date DESC`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query expenses: %v", err)
@@ -350,7 +323,7 @@ func (s *databaseStore) GetAllExpenses() ([]Expense, error) {
 }
 
 func (s *databaseStore) GetExpense(id string) (Expense, error) {
-	query := `SELECT id, recurring_id, description, "from", "to", method, note, category, amount, date FROM expenses WHERE id = $1`
+	query := `SELECT id, description, "from", "to", method, note, category, amount, date FROM expenses WHERE id = $1`
 	expense, err := scanExpense(s.db.QueryRow(query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -380,10 +353,10 @@ func (s *databaseStore) AddExpense(expense Expense) error {
 		expense.Date = time.Now()
 	}
 	query := `
-		INSERT INTO expenses (id, recurring_id, description, "from", "to", method, note, category, amount, currency, date)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO expenses (id, description, "from", "to", method, note, category, amount, currency, date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
-	_, err := s.db.Exec(query, expense.ID, expense.RecurringID, expense.Description, expense.From, expense.To, expense.Method, expense.Note, expense.Category, expense.Amount, expense.Currency, expense.Date)
+	_, err := s.db.Exec(query, expense.ID, expense.Description, expense.From, expense.To, expense.Method, expense.Note, expense.Category, expense.Amount, expense.Currency, expense.Date)
 	return err
 }
 
@@ -394,10 +367,10 @@ func (s *databaseStore) UpdateExpense(id string, expense Expense) error {
 	}
 	query := `
 		UPDATE expenses
-		SET description = $1, "from" = $2, "to" = $3, method = $4, note = $5, category = $6, amount = $7, currency = $8, date = $9, recurring_id = $10
-		WHERE id = $11
+		SET description = $1, "from" = $2, "to" = $3, method = $4, note = $5, category = $6, amount = $7, currency = $8, date = $9
+		WHERE id = $10
 	`
-	result, err := s.db.Exec(query, expense.Description, expense.From, expense.To, expense.Method, expense.Note, expense.Category, expense.Amount, expense.Currency, expense.Date, expense.RecurringID, id)
+	result, err := s.db.Exec(query, expense.Description, expense.From, expense.To, expense.Method, expense.Note, expense.Category, expense.Amount, expense.Currency, expense.Date, id)
 	if err != nil {
 		return fmt.Errorf("failed to update expense: %v", err)
 	}
@@ -450,243 +423,4 @@ func (s *databaseStore) RemoveMultipleExpenses(ids []string) error {
 		return fmt.Errorf("failed to delete multiple expenses: %v", err)
 	}
 	return nil
-}
-
-func scanRecurringExpense(scanner interface{ Scan(...any) error }) (RecurringExpense, error) {
-	var re RecurringExpense
-	var fromStr, toStr, methodStr, noteStr sql.NullString
-	err := scanner.Scan(&re.ID, &re.Description, &re.Amount, &re.Currency, &fromStr, &toStr, &methodStr, &noteStr, &re.Category, &re.StartDate, &re.Interval, &re.Occurrences)
-	if err != nil {
-		return RecurringExpense{}, err
-	}
-	if fromStr.Valid {
-		re.From = fromStr.String
-	}
-	if toStr.Valid {
-		re.To = toStr.String
-	}
-	if methodStr.Valid {
-		re.Method = methodStr.String
-	}
-	if noteStr.Valid {
-		re.Note = noteStr.String
-	}
-	return re, nil
-}
-
-func (s *databaseStore) GetRecurringExpenses() ([]RecurringExpense, error) {
-	query := `SELECT id, description, amount, currency, "from", "to", method, note, category, start_date, interval, occurrences FROM recurring_expenses`
-	rows, err := s.db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query recurring expenses: %v", err)
-	}
-	defer rows.Close()
-	var recurringExpenses []RecurringExpense
-	for rows.Next() {
-		re, err := scanRecurringExpense(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan recurring expense: %v", err)
-		}
-		recurringExpenses = append(recurringExpenses, re)
-	}
-	return recurringExpenses, nil
-}
-
-func (s *databaseStore) GetRecurringExpense(id string) (RecurringExpense, error) {
-	query := `SELECT id, description, amount, currency, "from", "to", method, note, category, start_date, interval, occurrences FROM recurring_expenses WHERE id = $1`
-	re, err := scanRecurringExpense(s.db.QueryRow(query, id))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return RecurringExpense{}, fmt.Errorf("recurring expense with ID %s not found", id)
-		}
-		return RecurringExpense{}, fmt.Errorf("failed to get recurring expense: %v", err)
-	}
-	return re, nil
-}
-
-func (s *databaseStore) AddRecurringExpense(recurringExpense RecurringExpense) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %v", err)
-	}
-	defer tx.Rollback() // Rollback on error
-
-	if recurringExpense.ID == "" {
-		recurringExpense.ID = uuid.New().String()
-	}
-	if recurringExpense.Currency == "" {
-		recurringExpense.Currency = s.defaults["currency"]
-	}
-	ruleQuery := `
-		INSERT INTO recurring_expenses (id, description, amount, currency, "from", "to", method, note, category, start_date, interval, occurrences)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-	`
-	_, err = tx.Exec(ruleQuery, recurringExpense.ID, recurringExpense.Description, recurringExpense.Amount, recurringExpense.Currency, recurringExpense.From, recurringExpense.To, recurringExpense.Method, recurringExpense.Note, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences)
-	if err != nil {
-		return fmt.Errorf("failed to insert recurring expense rule: %v", err)
-	}
-
-	expensesToAdd := generateExpensesFromRecurring(recurringExpense, false)
-	if len(expensesToAdd) > 0 {
-		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "method", "note", "category", "amount", "currency", "date"))
-		if err != nil {
-			return fmt.Errorf("failed to prepare copy in: %v", err)
-		}
-		defer stmt.Close()
-		for _, exp := range expensesToAdd {
-			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Method, exp.Note, exp.Category, exp.Amount, exp.Currency, exp.Date)
-			if err != nil {
-				return fmt.Errorf("failed to execute copy in: %v", err)
-			}
-		}
-		if _, err = stmt.Exec(); err != nil {
-			return fmt.Errorf("failed to finalize copy in: %v", err)
-		}
-	}
-	return tx.Commit()
-}
-
-func (s *databaseStore) UpdateRecurringExpense(id string, recurringExpense RecurringExpense, updateAll bool) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %v", err)
-	}
-	defer tx.Rollback()
-	recurringExpense.ID = id // Ensure ID is preserved
-	if recurringExpense.Currency == "" {
-		recurringExpense.Currency = s.defaults["currency"]
-	}
-	ruleQuery := `
-		UPDATE recurring_expenses
-		SET description = $1, amount = $2, "from" = $3, "to" = $4, method = $5, note = $6, category = $7, start_date = $8, interval = $9, occurrences = $10, currency = $11
-		WHERE id = $12
-	`
-	res, err := tx.Exec(ruleQuery, recurringExpense.Description, recurringExpense.Amount, recurringExpense.From, recurringExpense.To, recurringExpense.Method, recurringExpense.Note, recurringExpense.Category, recurringExpense.StartDate, recurringExpense.Interval, recurringExpense.Occurrences, recurringExpense.Currency, id)
-	if err != nil {
-		return fmt.Errorf("failed to update recurring expense rule: %v", err)
-	}
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("recurring expense with ID %s not found to update", id)
-	}
-
-	var deleteQuery string
-	if updateAll {
-		deleteQuery = `DELETE FROM expenses WHERE recurring_id = $1`
-		_, err = tx.Exec(deleteQuery, id)
-	} else {
-		deleteQuery = `DELETE FROM expenses WHERE recurring_id = $1 AND date > $2`
-		_, err = tx.Exec(deleteQuery, id, time.Now())
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete old expense instances for update: %v", err)
-	}
-
-	expensesToAdd := generateExpensesFromRecurring(recurringExpense, !updateAll)
-	if len(expensesToAdd) > 0 {
-		stmt, err := tx.Prepare(pq.CopyIn("expenses", "id", "recurring_id", "description", "from", "to", "method", "note", "category", "amount", "currency", "date"))
-		if err != nil {
-			return fmt.Errorf("failed to prepare copy in for update: %v", err)
-		}
-		defer stmt.Close()
-		for _, exp := range expensesToAdd {
-			_, err = stmt.Exec(exp.ID, exp.RecurringID, exp.Description, exp.From, exp.To, exp.Method, exp.Note, exp.Category, exp.Amount, exp.Currency, exp.Date)
-			if err != nil {
-				return fmt.Errorf("failed to execute copy in for update: %v", err)
-			}
-		}
-		if _, err = stmt.Exec(); err != nil {
-			return fmt.Errorf("failed to finalize copy in for update: %v", err)
-		}
-	}
-	return tx.Commit()
-}
-
-func (s *databaseStore) RemoveRecurringExpense(id string, removeAll bool) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %v", err)
-	}
-	defer tx.Rollback()
-	res, err := tx.Exec(`DELETE FROM recurring_expenses WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("failed to delete recurring expense rule: %v", err)
-	}
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("recurring expense with ID %s not found", id)
-	}
-
-	var deleteQuery string
-	if removeAll {
-		deleteQuery = `DELETE FROM expenses WHERE recurring_id = $1`
-		_, err = tx.Exec(deleteQuery, id)
-	} else {
-		deleteQuery = `DELETE FROM expenses WHERE recurring_id = $1 AND date > $2`
-		_, err = tx.Exec(deleteQuery, id, time.Now())
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete expense instances: %v", err)
-	}
-	return tx.Commit()
-}
-
-func generateExpensesFromRecurring(recExp RecurringExpense, fromToday bool) []Expense {
-	var expenses []Expense
-	currentDate := recExp.StartDate
-	today := time.Now()
-	occurrencesToGenerate := recExp.Occurrences
-	if fromToday {
-		for currentDate.Before(today) && (recExp.Occurrences == 0 || occurrencesToGenerate > 0) {
-			switch recExp.Interval {
-			case "daily":
-				currentDate = currentDate.AddDate(0, 0, 1)
-			case "weekly":
-				currentDate = currentDate.AddDate(0, 0, 7)
-			case "monthly":
-				currentDate = currentDate.AddDate(0, 1, 0)
-			case "yearly":
-				currentDate = currentDate.AddDate(1, 0, 0)
-			default:
-				return expenses // Stop if interval is invalid
-			}
-			if recExp.Occurrences > 0 {
-				occurrencesToGenerate--
-			}
-		}
-	}
-	limit := occurrencesToGenerate
-	// if recExp.Occurrences == 0 {
-	// 	limit = 2000 // Heuristic for "indefinite"
-	// }
-
-	for range limit {
-		expense := Expense{
-			ID:          "", // Will be generated by AddMultipleExpenses
-			RecurringID: recExp.ID,
-			Description: recExp.Description,
-			From:        recExp.From,
-			To:          recExp.To,
-			Method:      recExp.Method,
-			Note:        recExp.Note,
-			Category:    recExp.Category,
-			Amount:      recExp.Amount,
-			Currency:    recExp.Currency,
-			Date:        currentDate,
-		}
-		expenses = append(expenses, expense)
-		switch recExp.Interval {
-		case "daily":
-			currentDate = currentDate.AddDate(0, 0, 1)
-		case "weekly":
-			currentDate = currentDate.AddDate(0, 0, 7)
-		case "monthly":
-			currentDate = currentDate.AddDate(0, 1, 0)
-		case "yearly":
-			currentDate = currentDate.AddDate(1, 0, 0)
-		default:
-			return expenses
-		}
-	}
-	return expenses
 }
