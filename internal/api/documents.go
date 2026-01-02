@@ -1134,22 +1134,22 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 		BorderThickness: borderThickness,
 	}
 
-	// Total row borders
+	// Total row borders (no top border to match content rows)
 	totalLabelBorder := props.Cell{
-		BorderType:      border.Left | border.Top | border.Bottom | border.Right,
+		BorderType:      border.Left | border.Bottom | border.Right,
 		BorderThickness: borderThickness,
 	}
 	totalAmountBorder := props.Cell{
-		BorderType:      border.Top | border.Bottom | border.Right,
+		BorderType:      border.Bottom | border.Right,
 		BorderThickness: borderThickness,
 	}
 
 	// Add table header with borders
-	// When category is specified: remove category column and redistribute space
-	// Daily + Category: Party (2), Description (4), Amount (2), Method (3), Note (1) = 12 columns
-	// Daily: Category (2), Party (2), Description (3), Amount (2), Method (2), Note (1) = 12 columns
-	// Monthly/Yearly + Category: Date (2), Party (2), Description (3), Amount (2), Method (2), Note (1) = 12 columns
-	// Monthly/Yearly: Date (2), Category (2), Party (2), Description (2), Amount (2), Method (1), Note (1) = 12 columns
+	// Column order: Date, Category, Party, Description, Method, Note, Amount (Amount moved to last)
+	// Daily + Category: Party (2), Description (3), Method (2), Note (3), Amount (2) = 12 columns
+	// Daily: Category (2), Party (2), Description (2), Method (2), Note (2), Amount (2) = 12 columns
+	// Monthly/Yearly + Category: Date (2), Party (2), Description (2), Method (2), Note (2), Amount (2) = 12 columns
+	// Monthly/Yearly: Date (2), Category (2), Party (1), Description (2), Method (2), Note (1), Amount (2) = 12 columns
 
 	if period == "daily" && category != "" {
 		// Daily report with category filter: no Date, no Category columns
@@ -1164,8 +1164,28 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Align: align.Left,
 				}),
 			).WithStyle(&headerBorderLeft),
-			col.New(4).Add(
+			col.New(3).Add(
 				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(3).Add(
+				text.New(noteLabel, props.Text{
 					Top:   2,
 					Left:  2,
 					Right: 2,
@@ -1184,29 +1204,9 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Align: align.Right,
 				}),
 			).WithStyle(&headerBorder),
-			col.New(3).Add(
-				text.New(methodLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Left,
-				}),
-			).WithStyle(&headerBorder),
-			col.New(1).Add(
-				text.New(noteLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Left,
-				}),
-			).WithStyle(&headerBorder),
 		)
 	} else if period == "daily" {
-		// Daily report without category filter: no Date column, expand Description to 3 columns
+		// Daily report without category filter: no Date column
 		m.AddRow(10,
 			col.New(2).Add(
 				text.New(categoryLabel, props.Text{
@@ -1228,8 +1228,28 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Align: align.Left,
 				}),
 			).WithStyle(&headerBorder),
-			col.New(3).Add(
+			col.New(2).Add(
 				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(noteLabel, props.Text{
 					Top:   2,
 					Left:  2,
 					Right: 2,
@@ -1246,26 +1266,6 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Size:  10,
 					Style: fontstyle.Bold,
 					Align: align.Right,
-				}),
-			).WithStyle(&headerBorder),
-			col.New(2).Add(
-				text.New(methodLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Left,
-				}),
-			).WithStyle(&headerBorder),
-			col.New(1).Add(
-				text.New(noteLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Left,
 				}),
 			).WithStyle(&headerBorder),
 		)
@@ -1292,8 +1292,28 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Align: align.Left,
 				}),
 			).WithStyle(&headerBorder),
-			col.New(3).Add(
+			col.New(2).Add(
 				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(noteLabel, props.Text{
 					Top:   2,
 					Left:  2,
 					Right: 2,
@@ -1310,26 +1330,6 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Size:  10,
 					Style: fontstyle.Bold,
 					Align: align.Right,
-				}),
-			).WithStyle(&headerBorder),
-			col.New(2).Add(
-				text.New(methodLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Left,
-				}),
-			).WithStyle(&headerBorder),
-			col.New(1).Add(
-				text.New(noteLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Left,
 				}),
 			).WithStyle(&headerBorder),
 		)
@@ -1356,7 +1356,7 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Align: align.Left,
 				}),
 			).WithStyle(&headerBorder),
-			col.New(2).Add(
+			col.New(1).Add(
 				text.New(partyLabel, props.Text{
 					Top:   2,
 					Left:  2,
@@ -1377,16 +1377,6 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 				}),
 			).WithStyle(&headerBorder),
 			col.New(2).Add(
-				text.New(amountLabel, props.Text{
-					Top:   2,
-					Left:  2,
-					Right: 2,
-					Size:  10,
-					Style: fontstyle.Bold,
-					Align: align.Right,
-				}),
-			).WithStyle(&headerBorder),
-			col.New(1).Add(
 				text.New(methodLabel, props.Text{
 					Top:   2,
 					Left:  2,
@@ -1404,6 +1394,16 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Size:  10,
 					Style: fontstyle.Bold,
 					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(amountLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Right,
 				}),
 			).WithStyle(&headerBorder),
 		)
@@ -1440,13 +1440,13 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 		// Split description into lines based on column width
 		var maxCharsPerLine int
 		if period == "daily" && category != "" {
-			maxCharsPerLine = 40 // 4 columns (wider)
+			maxCharsPerLine = 30 // 3 columns
 		} else if period == "daily" {
-			maxCharsPerLine = 30 // 3 columns
+			maxCharsPerLine = 20 // 2 columns
 		} else if category != "" {
-			maxCharsPerLine = 30 // 3 columns
+			maxCharsPerLine = 20 // 2 columns
 		} else {
-			maxCharsPerLine = 20 // 2 columns (narrowest)
+			maxCharsPerLine = 20 // 2 columns
 		}
 
 		// Split description into lines
@@ -1469,7 +1469,7 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 
 		// Generate row based on period and category filter
 		if period == "daily" && category != "" {
-			// Daily + Category: no Date, no Category columns
+			// Daily + Category: Party, Description, Method, Note, Amount
 			m.AddRow(rowHeight,
 				col.New(2).Add(
 					text.New(party, props.Text{
@@ -1480,8 +1480,26 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Align: align.Left,
 					}),
 				).WithStyle(&borderLeft),
-				col.New(4).Add(
+				col.New(3).Add(
 					text.New(displayDescription, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(3).Add(
+					text.New(note, props.Text{
 						Top:   1,
 						Left:  2,
 						Right: 2,
@@ -1496,29 +1514,11 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Right: 2,
 						Size:  9,
 						Align: align.Right,
-					}),
-				).WithStyle(&border),
-				col.New(3).Add(
-					text.New(localizedMethod, props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Left,
-					}),
-				).WithStyle(&border),
-				col.New(1).Add(
-					text.New(note, props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Left,
 					}),
 				).WithStyle(&border),
 			)
 		} else if period == "daily" {
-			// Daily without category filter: no Date column
+			// Daily: Category, Party, Description, Method, Note, Amount
 			m.AddRow(rowHeight,
 				col.New(2).Add(
 					text.New(exp.Category, props.Text{
@@ -1538,8 +1538,26 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Align: align.Left,
 					}),
 				).WithStyle(&border),
-				col.New(3).Add(
+				col.New(2).Add(
 					text.New(displayDescription, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(note, props.Text{
 						Top:   1,
 						Left:  2,
 						Right: 2,
@@ -1554,29 +1572,11 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Right: 2,
 						Size:  9,
 						Align: align.Right,
-					}),
-				).WithStyle(&border),
-				col.New(2).Add(
-					text.New(localizedMethod, props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Left,
-					}),
-				).WithStyle(&border),
-				col.New(1).Add(
-					text.New(note, props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Left,
 					}),
 				).WithStyle(&border),
 			)
 		} else if category != "" {
-			// Monthly/Yearly + Category: no Category column
+			// Monthly/Yearly + Category: Date, Party, Description, Method, Note, Amount
 			m.AddRow(rowHeight,
 				col.New(2).Add(
 					text.New(dateStr, props.Text{
@@ -1596,8 +1596,26 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Align: align.Left,
 					}),
 				).WithStyle(&border),
-				col.New(3).Add(
+				col.New(2).Add(
 					text.New(displayDescription, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(note, props.Text{
 						Top:   1,
 						Left:  2,
 						Right: 2,
@@ -1614,27 +1632,9 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Align: align.Right,
 					}),
 				).WithStyle(&border),
-				col.New(2).Add(
-					text.New(localizedMethod, props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Left,
-					}),
-				).WithStyle(&border),
-				col.New(1).Add(
-					text.New(note, props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Left,
-					}),
-				).WithStyle(&border),
 			)
 		} else {
-			// Monthly/Yearly without category filter: include all columns
+			// Monthly/Yearly: Date, Category, Party, Description, Method, Note, Amount
 			m.AddRow(rowHeight,
 				col.New(2).Add(
 					text.New(dateStr, props.Text{
@@ -1654,7 +1654,7 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Align: align.Left,
 					}),
 				).WithStyle(&border),
-				col.New(2).Add(
+				col.New(1).Add(
 					text.New(party, props.Text{
 						Top:   1,
 						Left:  2,
@@ -1673,15 +1673,6 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					}),
 				).WithStyle(&border),
 				col.New(2).Add(
-					text.New(formatCurrencyGo(math.Abs(exp.Amount), currency), props.Text{
-						Top:   1,
-						Left:  2,
-						Right: 2,
-						Size:  9,
-						Align: align.Right,
-					}),
-				).WithStyle(&border),
-				col.New(1).Add(
 					text.New(localizedMethod, props.Text{
 						Top:   1,
 						Left:  2,
@@ -1697,6 +1688,15 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						Right: 2,
 						Size:  9,
 						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(formatCurrencyGo(math.Abs(exp.Amount), currency), props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Right,
 					}),
 				).WithStyle(&border),
 			)
@@ -1718,10 +1718,11 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 				}
 
 				// Add continuation row with empty cells except for description
+				// New column order: Party, Description, Method, Note, Amount (2 cols)
 				if period == "daily" && category != "" {
 					m.AddRow(rowHeight,
 						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
-						col.New(4).Add(
+						col.New(3).Add(
 							text.New(continuationText, props.Text{
 								Top:   1,
 								Left:  2,
@@ -1732,46 +1733,12 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 						).WithStyle(&contBorder),
 						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 						col.New(3).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 					)
 				} else if period == "daily" {
+					// Category, Party, Description, Method, Note, Amount
 					m.AddRow(rowHeight,
 						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(3).Add(
-							text.New(continuationText, props.Text{
-								Top:   1,
-								Left:  2,
-								Right: 2,
-								Size:  9,
-								Align: align.Left,
-							}),
-						).WithStyle(&contBorder),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-					)
-				} else if category != "" {
-					m.AddRow(rowHeight,
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(3).Add(
-							text.New(continuationText, props.Text{
-								Top:   1,
-								Left:  2,
-								Right: 2,
-								Size:  9,
-								Align: align.Left,
-							}),
-						).WithStyle(&contBorder),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
-					)
-				} else {
-					m.AddRow(rowHeight,
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
-						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 						col.New(2).Add(
 							text.New(continuationText, props.Text{
@@ -1783,28 +1750,57 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 							}),
 						).WithStyle(&contBorder),
 						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+					)
+				} else if category != "" {
+					// Date, Party, Description, Method, Note, Amount
+					m.AddRow(rowHeight,
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(
+							text.New(continuationText, props.Text{
+								Top:   1,
+								Left:  2,
+								Right: 2,
+								Size:  9,
+								Align: align.Left,
+							}),
+						).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+					)
+				} else {
+					// Date, Category, Party, Description, Method, Note, Amount
+					m.AddRow(rowHeight,
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(
+							text.New(continuationText, props.Text{
+								Top:   1,
+								Left:  2,
+								Right: 2,
+								Size:  9,
+								Align: align.Left,
+							}),
+						).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
 					)
 				}
 			}
 		}
 	}
 
-	// Add total row with borders
+	// Add total row with borders - total appears in Amount column
 	if period == "daily" && category != "" {
-		// Daily + Category: Party (2) + Description (4) + Amount (2) + Method (3) + Note (1) = 12 cols
-		// Total label spans 8 cols (Party to Method), amount in 2 cols, note in 1 col (empty)
+		// Daily + Category: Party (2) + Description (3) + Method (2) + Note (3) + Amount (2) = 12 cols
 		m.AddRow(12,
-			col.New(8).Add(
-				text.New(totalLabel, props.Text{
-					Top:   3,
-					Left:  2,
-					Right: 2,
-					Size:  11,
-					Style: fontstyle.Bold,
-					Align: align.Right,
-				}),
+			col.New(10).Add(
+				text.New("", props.Text{Size: 9}),
 			).WithStyle(&totalLabelBorder),
 			col.New(2).Add(
 				text.New(formatCurrencyGo(total, currency), props.Text{
@@ -1814,27 +1810,14 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Size:  11,
 					Style: fontstyle.Bold,
 					Align: align.Right,
-				}),
-			).WithStyle(&totalAmountBorder),
-			col.New(2).Add(
-				text.New("", props.Text{
-					Size: 9,
 				}),
 			).WithStyle(&totalAmountBorder),
 		)
 	} else if period == "daily" {
-		// Daily: Category (2) + Party (2) + Description (3) + Amount (2) + Method (2) + Note (1) = 12 cols
-		// Total label spans 9 cols (Category to Method), amount in 2 cols, note in 1 col (empty)
+		// Daily: Category (2) + Party (2) + Description (2) + Method (2) + Note (2) + Amount (2) = 12 cols
 		m.AddRow(12,
-			col.New(9).Add(
-				text.New(totalLabel, props.Text{
-					Top:   3,
-					Left:  2,
-					Right: 2,
-					Size:  11,
-					Style: fontstyle.Bold,
-					Align: align.Right,
-				}),
+			col.New(10).Add(
+				text.New("", props.Text{Size: 9}),
 			).WithStyle(&totalLabelBorder),
 			col.New(2).Add(
 				text.New(formatCurrencyGo(total, currency), props.Text{
@@ -1844,27 +1827,14 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Size:  11,
 					Style: fontstyle.Bold,
 					Align: align.Right,
-				}),
-			).WithStyle(&totalAmountBorder),
-			col.New(1).Add(
-				text.New("", props.Text{
-					Size: 9,
 				}),
 			).WithStyle(&totalAmountBorder),
 		)
 	} else if category != "" {
-		// Monthly/Yearly + Category: Date (2) + Party (2) + Description (3) + Amount (2) + Method (2) + Note (1) = 12 cols
-		// Total label spans 9 cols (Date to Method), amount in 2 cols, note in 1 col (empty)
+		// Monthly/Yearly + Category: Date (2) + Party (2) + Description (2) + Method (2) + Note (2) + Amount (2) = 12 cols
 		m.AddRow(12,
-			col.New(9).Add(
-				text.New(totalLabel, props.Text{
-					Top:   3,
-					Left:  2,
-					Right: 2,
-					Size:  11,
-					Style: fontstyle.Bold,
-					Align: align.Right,
-				}),
+			col.New(10).Add(
+				text.New("", props.Text{Size: 9}),
 			).WithStyle(&totalLabelBorder),
 			col.New(2).Add(
 				text.New(formatCurrencyGo(total, currency), props.Text{
@@ -1876,25 +1846,12 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, categor
 					Align: align.Right,
 				}),
 			).WithStyle(&totalAmountBorder),
-			col.New(1).Add(
-				text.New("", props.Text{
-					Size: 9,
-				}),
-			).WithStyle(&totalAmountBorder),
 		)
 	} else {
-		// Monthly/Yearly: Date (2) + Category (2) + Party (2) + Description (2) + Amount (2) + Method (1) + Note (1) = 12 cols
-		// Total label spans 10 cols (Date to Method), amount in 2 cols
+		// Monthly/Yearly: Date (2) + Category (2) + Party (1) + Description (2) + Method (2) + Note (1) + Amount (2) = 12 cols
 		m.AddRow(12,
 			col.New(10).Add(
-				text.New(totalLabel, props.Text{
-					Top:   3,
-					Left:  2,
-					Right: 2,
-					Size:  11,
-					Style: fontstyle.Bold,
-					Align: align.Right,
-				}),
+				text.New("", props.Text{Size: 9}),
 			).WithStyle(&totalLabelBorder),
 			col.New(2).Add(
 				text.New(formatCurrencyGo(total, currency), props.Text{
