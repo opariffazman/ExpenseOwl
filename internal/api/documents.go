@@ -855,6 +855,7 @@ func (h *Handler) GenerateReportPDF(w http.ResponseWriter, r *http.Request) {
 	// Extract query parameters
 	transactionType := r.URL.Query().Get("type")   // "expenses" or "gains"
 	period := r.URL.Query().Get("period")          // "daily", "monthly", "yearly"
+	category := r.URL.Query().Get("category")      // optional: filter by category
 	yearStr := r.URL.Query().Get("year")
 	monthStr := r.URL.Query().Get("month")
 
@@ -890,12 +891,25 @@ func (h *Handler) GenerateReportPDF(w http.ResponseWriter, r *http.Request) {
 		currency = "usd"
 	}
 
-	// Filter expenses by type (expenses or gains)
+	// Filter expenses by type (expenses or gains) and optionally by category
 	var filteredExpenses []storage.Expense
 	for _, exp := range expenses {
+		// Check transaction type
+		typeMatch := false
 		if transactionType == "gains" && exp.Amount > 0 {
-			filteredExpenses = append(filteredExpenses, exp)
+			typeMatch = true
 		} else if transactionType == "expenses" && exp.Amount < 0 {
+			typeMatch = true
+		}
+
+		// Check category if specified
+		categoryMatch := true
+		if category != "" && exp.Category != category {
+			categoryMatch = false
+		}
+
+		// Add if both conditions match
+		if typeMatch && categoryMatch {
 			filteredExpenses = append(filteredExpenses, exp)
 		}
 	}
@@ -940,7 +954,7 @@ func (h *Handler) GenerateReportPDF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate PDF
-	pdfBytes, err := buildReportPDF(filteredExpenses, transactionType, period, language, currency)
+	pdfBytes, err := buildReportPDF(filteredExpenses, transactionType, period, category, language, currency)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate PDF"})
 		log.Printf("API ERROR: Failed to generate report PDF: %v\n", err)
@@ -956,8 +970,40 @@ func (h *Handler) GenerateReportPDF(w http.ResponseWriter, r *http.Request) {
 	log.Printf("HTTP: Generated %s report PDF for period %s\n", transactionType, period)
 }
 
+// splitTextIntoLines splits text into multiple lines based on character limit
+// This ensures long descriptions wrap to new rows instead of being truncated
+func splitTextIntoLines(text string, maxCharsPerLine int) []string {
+	if len(text) <= maxCharsPerLine {
+		return []string{text}
+	}
+
+	var lines []string
+	remaining := text
+
+	for len(remaining) > 0 {
+		if len(remaining) <= maxCharsPerLine {
+			lines = append(lines, remaining)
+			break
+		}
+
+		// Find the last space before maxCharsPerLine to avoid breaking words
+		splitIndex := maxCharsPerLine
+		lastSpace := strings.LastIndex(remaining[:maxCharsPerLine], " ")
+
+		if lastSpace > 0 && lastSpace > maxCharsPerLine/2 {
+			// Only use the space if it's not too early (past halfway point)
+			splitIndex = lastSpace
+		}
+
+		lines = append(lines, remaining[:splitIndex])
+		remaining = strings.TrimSpace(remaining[splitIndex:])
+	}
+
+	return lines
+}
+
 // buildReportPDF builds a PDF document containing a table of transactions
-func buildReportPDF(expenses []storage.Expense, transactionType, period, language, currency string) ([]byte, error) {
+func buildReportPDF(expenses []storage.Expense, transactionType, period, category, language, currency string) ([]byte, error) {
 	// Create maroto instance
 	cfg := config.NewBuilder().
 		WithPageSize(pagesize.A4).
@@ -1025,14 +1071,23 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 
 	// Add report type and period
 	// For daily reports, include the date in the title
+	// For category reports, include the category in the title
 	var subtitle string
 	if period == "daily" && len(expenses) > 0 {
 		// Get the date from the first expense and format as DD/MM/YYYY
 		firstDate := expenses[0].Date
 		dateStr := fmt.Sprintf("%02d/%02d/%04d", firstDate.Day(), firstDate.Month(), firstDate.Year())
-		subtitle = fmt.Sprintf("%s - %s - %s", typeLabel, periodLabel, dateStr)
+		if category != "" {
+			subtitle = fmt.Sprintf("%s - %s - %s - %s", typeLabel, periodLabel, category, dateStr)
+		} else {
+			subtitle = fmt.Sprintf("%s - %s - %s", typeLabel, periodLabel, dateStr)
+		}
 	} else {
-		subtitle = fmt.Sprintf("%s - %s", typeLabel, periodLabel)
+		if category != "" {
+			subtitle = fmt.Sprintf("%s - %s - %s", typeLabel, periodLabel, category)
+		} else {
+			subtitle = fmt.Sprintf("%s - %s", typeLabel, periodLabel)
+		}
 	}
 
 	m.AddRow(10,
@@ -1090,10 +1145,68 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 	}
 
 	// Add table header with borders
-	// For daily reports: Category (2), Party (2), Description (3), Amount (2), Method (2), Note (1) = 12 columns
-	// For monthly/yearly: Date (2), Category (2), Party (2), Description (2), Amount (2), Method (1), Note (1) = 12 columns
-	if period == "daily" {
-		// Daily report: no Date column, expand Description to 3 columns
+	// When category is specified: remove category column and redistribute space
+	// Daily + Category: Party (2), Description (4), Amount (2), Method (3), Note (1) = 12 columns
+	// Daily: Category (2), Party (2), Description (3), Amount (2), Method (2), Note (1) = 12 columns
+	// Monthly/Yearly + Category: Date (2), Party (2), Description (3), Amount (2), Method (2), Note (1) = 12 columns
+	// Monthly/Yearly: Date (2), Category (2), Party (2), Description (2), Amount (2), Method (1), Note (1) = 12 columns
+
+	if period == "daily" && category != "" {
+		// Daily report with category filter: no Date, no Category columns
+		m.AddRow(10,
+			col.New(2).Add(
+				text.New(partyLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorderLeft),
+			col.New(4).Add(
+				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(amountLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(3).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(1).Add(
+				text.New(noteLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+		)
+	} else if period == "daily" {
+		// Daily report without category filter: no Date column, expand Description to 3 columns
 		m.AddRow(10,
 			col.New(2).Add(
 				text.New(categoryLabel, props.Text{
@@ -1156,8 +1269,72 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 				}),
 			).WithStyle(&headerBorder),
 		)
+	} else if category != "" {
+		// Monthly/Yearly report with category filter: no Category column
+		m.AddRow(10,
+			col.New(2).Add(
+				text.New(dateLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorderLeft),
+			col.New(2).Add(
+				text.New(partyLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(3).Add(
+				text.New(descriptionLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(amountLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(2).Add(
+				text.New(methodLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+			col.New(1).Add(
+				text.New(noteLabel, props.Text{
+					Top:   2,
+					Left:  2,
+					Right: 2,
+					Size:  10,
+					Style: fontstyle.Bold,
+					Align: align.Left,
+				}),
+			).WithStyle(&headerBorder),
+		)
 	} else {
-		// Monthly/Yearly report: include Date column (2 cols)
+		// Monthly/Yearly report without category filter: include Date and Category columns
 		m.AddRow(10,
 			col.New(2).Add(
 				text.New(dateLabel, props.Text{
@@ -1260,32 +1437,27 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 			note = "-"
 		}
 
-		// Calculate row height based on description length
-		// Approximate: 9pt font, ~40 chars per line for description column width
-		// Daily: 3 columns = ~60 chars per line, Monthly: 2 columns = ~40 chars per line
-		var charsPerLine int
-		if period == "daily" {
-			charsPerLine = 60 // 3 columns
+		// Split description into lines based on column width
+		var maxCharsPerLine int
+		if period == "daily" && category != "" {
+			maxCharsPerLine = 40 // 4 columns (wider)
+		} else if period == "daily" {
+			maxCharsPerLine = 30 // 3 columns
+		} else if category != "" {
+			maxCharsPerLine = 30 // 3 columns
 		} else {
-			charsPerLine = 40 // 2 columns
+			maxCharsPerLine = 20 // 2 columns (narrowest)
 		}
 
-		descriptionLines := len(exp.Description) / charsPerLine
-		if len(exp.Description)%charsPerLine > 0 {
-			descriptionLines++
-		}
-		if descriptionLines < 1 {
-			descriptionLines = 1
-		}
+		// Split description into lines
+		descriptionLines := splitTextIntoLines(exp.Description, maxCharsPerLine)
+		displayDescription := descriptionLines[0] // First line for main row
 
-		// Base row height is 7, add ~5 per additional line
+		// Fixed row height
 		rowHeight := 7.0
-		if descriptionLines > 1 {
-			rowHeight = 7.0 + float64(descriptionLines-1)*5.0
-		}
 
-		// Determine if this is the last row
-		isLastRow := (i == len(expenses)-1)
+		// Determine if this is the last row AND last line
+		isLastRow := (i == len(expenses)-1) && (len(descriptionLines) == 1)
 
 		borderLeft := contentBorderLeft
 		border := contentBorder
@@ -1295,8 +1467,58 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 			border = lastBorder
 		}
 
-		// Daily report: no Date column, Description gets 3 columns
-		if period == "daily" {
+		// Generate row based on period and category filter
+		if period == "daily" && category != "" {
+			// Daily + Category: no Date, no Category columns
+			m.AddRow(rowHeight,
+				col.New(2).Add(
+					text.New(party, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&borderLeft),
+				col.New(4).Add(
+					text.New(displayDescription, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(formatCurrencyGo(math.Abs(exp.Amount), currency), props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Right,
+					}),
+				).WithStyle(&border),
+				col.New(3).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(1).Add(
+					text.New(note, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+			)
+		} else if period == "daily" {
+			// Daily without category filter: no Date column
 			m.AddRow(rowHeight,
 				col.New(2).Add(
 					text.New(exp.Category, props.Text{
@@ -1317,7 +1539,65 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 					}),
 				).WithStyle(&border),
 				col.New(3).Add(
-					text.New(exp.Description, props.Text{
+					text.New(displayDescription, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(formatCurrencyGo(math.Abs(exp.Amount), currency), props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Right,
+					}),
+				).WithStyle(&border),
+				col.New(2).Add(
+					text.New(localizedMethod, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(1).Add(
+					text.New(note, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+			)
+		} else if category != "" {
+			// Monthly/Yearly + Category: no Category column
+			m.AddRow(rowHeight,
+				col.New(2).Add(
+					text.New(dateStr, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&borderLeft),
+				col.New(2).Add(
+					text.New(party, props.Text{
+						Top:   1,
+						Left:  2,
+						Right: 2,
+						Size:  9,
+						Align: align.Left,
+					}),
+				).WithStyle(&border),
+				col.New(3).Add(
+					text.New(displayDescription, props.Text{
 						Top:   1,
 						Left:  2,
 						Right: 2,
@@ -1354,7 +1634,7 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 				).WithStyle(&border),
 			)
 		} else {
-			// Monthly/Yearly report: Date gets 2 columns, Method gets 1 column
+			// Monthly/Yearly without category filter: include all columns
 			m.AddRow(rowHeight,
 				col.New(2).Add(
 					text.New(dateStr, props.Text{
@@ -1384,7 +1664,7 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 					}),
 				).WithStyle(&border),
 				col.New(2).Add(
-					text.New(exp.Description, props.Text{
+					text.New(displayDescription, props.Text{
 						Top:   1,
 						Left:  2,
 						Right: 2,
@@ -1421,12 +1701,160 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 				).WithStyle(&border),
 			)
 		}
+
+		// Add continuation rows for long descriptions (if needed)
+		if len(descriptionLines) > 1 {
+			for lineIdx := 1; lineIdx < len(descriptionLines); lineIdx++ {
+				continuationText := descriptionLines[lineIdx]
+
+				// Check if this is the last continuation line of the last expense
+				isLastContinuation := (i == len(expenses)-1) && (lineIdx == len(descriptionLines)-1)
+
+				contBorderLeft := contentBorderLeft
+				contBorder := contentBorder
+				if isLastContinuation {
+					contBorderLeft = lastBorderLeft
+					contBorder = lastBorder
+				}
+
+				// Add continuation row with empty cells except for description
+				if period == "daily" && category != "" {
+					m.AddRow(rowHeight,
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
+						col.New(4).Add(
+							text.New(continuationText, props.Text{
+								Top:   1,
+								Left:  2,
+								Right: 2,
+								Size:  9,
+								Align: align.Left,
+							}),
+						).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(3).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+					)
+				} else if period == "daily" {
+					m.AddRow(rowHeight,
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(3).Add(
+							text.New(continuationText, props.Text{
+								Top:   1,
+								Left:  2,
+								Right: 2,
+								Size:  9,
+								Align: align.Left,
+							}),
+						).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+					)
+				} else if category != "" {
+					m.AddRow(rowHeight,
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(3).Add(
+							text.New(continuationText, props.Text{
+								Top:   1,
+								Left:  2,
+								Right: 2,
+								Size:  9,
+								Align: align.Left,
+							}),
+						).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+					)
+				} else {
+					m.AddRow(rowHeight,
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorderLeft),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(2).Add(
+							text.New(continuationText, props.Text{
+								Top:   1,
+								Left:  2,
+								Right: 2,
+								Size:  9,
+								Align: align.Left,
+							}),
+						).WithStyle(&contBorder),
+						col.New(2).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+						col.New(1).Add(text.New("", props.Text{Size: 9})).WithStyle(&contBorder),
+					)
+				}
+			}
+		}
 	}
 
 	// Add total row with borders
-	if period == "daily" {
-		// Daily: total label spans 9 cols (Category to Method), amount in 2 cols, note in 1 col
-		// Category (2) + Party (2) + Description (3) + Amount (2) + Method (2) + Note (1) = 12 cols
+	if period == "daily" && category != "" {
+		// Daily + Category: Party (2) + Description (4) + Amount (2) + Method (3) + Note (1) = 12 cols
+		// Total label spans 8 cols (Party to Method), amount in 2 cols, note in 1 col (empty)
+		m.AddRow(12,
+			col.New(8).Add(
+				text.New(totalLabel, props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalLabelBorder),
+			col.New(2).Add(
+				text.New(formatCurrencyGo(total, currency), props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalAmountBorder),
+			col.New(2).Add(
+				text.New("", props.Text{
+					Size: 9,
+				}),
+			).WithStyle(&totalAmountBorder),
+		)
+	} else if period == "daily" {
+		// Daily: Category (2) + Party (2) + Description (3) + Amount (2) + Method (2) + Note (1) = 12 cols
+		// Total label spans 9 cols (Category to Method), amount in 2 cols, note in 1 col (empty)
+		m.AddRow(12,
+			col.New(9).Add(
+				text.New(totalLabel, props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalLabelBorder),
+			col.New(2).Add(
+				text.New(formatCurrencyGo(total, currency), props.Text{
+					Top:   3,
+					Left:  2,
+					Right: 2,
+					Size:  11,
+					Style: fontstyle.Bold,
+					Align: align.Right,
+				}),
+			).WithStyle(&totalAmountBorder),
+			col.New(1).Add(
+				text.New("", props.Text{
+					Size: 9,
+				}),
+			).WithStyle(&totalAmountBorder),
+		)
+	} else if category != "" {
+		// Monthly/Yearly + Category: Date (2) + Party (2) + Description (3) + Amount (2) + Method (2) + Note (1) = 12 cols
+		// Total label spans 9 cols (Date to Method), amount in 2 cols, note in 1 col (empty)
 		m.AddRow(12,
 			col.New(9).Add(
 				text.New(totalLabel, props.Text{
@@ -1455,8 +1883,8 @@ func buildReportPDF(expenses []storage.Expense, transactionType, period, languag
 			).WithStyle(&totalAmountBorder),
 		)
 	} else {
-		// Monthly/Yearly: total label spans 10 cols (Date to Method), amount in 2 cols
-		// Date (2) + Category (2) + Party (2) + Description (2) + Amount (2) + Method (1) + Note (1) = 12 cols
+		// Monthly/Yearly: Date (2) + Category (2) + Party (2) + Description (2) + Amount (2) + Method (1) + Note (1) = 12 cols
+		// Total label spans 10 cols (Date to Method), amount in 2 cols
 		m.AddRow(12,
 			col.New(10).Add(
 				text.New(totalLabel, props.Text{
