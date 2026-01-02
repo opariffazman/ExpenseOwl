@@ -123,7 +123,7 @@
                     <input type="text" id="note">
                 </div>
 
-                <button type="submit" id="submitBtn" class="nav-button" data-i18n="table.add_expense">Add Expense</button>
+                <button type="submit" id="submitBtn" class="nav-button" data-i18n="common.add">Add</button>
             </form>
             <div id="formMessage" class="form-message"></div>
         </div>
@@ -186,11 +186,11 @@
             if (isGain) {
                 gainBtn.classList.add('active');
                 expenseBtn.classList.remove('active');
-                submitBtn.textContent = isEditing ? t('table.update_gain', 'Update Gain') : t('table.add_gain', 'Add Gain');
+                submitBtn.textContent = isEditing ? t('common.update', 'Update') : t('common.add', 'Add');
             } else {
                 expenseBtn.classList.add('active');
                 gainBtn.classList.remove('active');
-                submitBtn.textContent = isEditing ? t('table.update_expense', 'Update Expense') : t('table.add_expense', 'Add Expense');
+                submitBtn.textContent = isEditing ? t('common.update', 'Update') : t('common.add', 'Add');
             }
 
             // Update the table to show only the selected transaction type

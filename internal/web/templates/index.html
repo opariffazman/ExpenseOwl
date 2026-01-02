@@ -129,7 +129,7 @@
                         <input type="text" id="note">
                     </div>
 
-                        <button type="submit" id="submitBtn" class="nav-button" data-i18n="dashboard.add_expense">Add Expense</button>
+                        <button type="submit" id="submitBtn" class="nav-button" data-i18n="common.add">Add</button>
                 </form>
                 <div id="formMessage" class="form-message"></div>
             </div>
@@ -417,11 +417,11 @@
                 if (isGain) {
                     gainBtn.innerHTML = `<i class="fa-solid fa-times"></i> ${closeText}`;
                     expenseBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addExpenseText}`;
-                    submitBtn.textContent = t('table.add_gain', 'Add Gain');
+                    submitBtn.textContent = t('common.add', 'Add');
                 } else {
                     expenseBtn.innerHTML = `<i class="fa-solid fa-times"></i> ${closeText}`;
                     gainBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${addGainsText}`;
-                    submitBtn.textContent = addExpenseText;
+                    submitBtn.textContent = t('common.add', 'Add');
                 }
             } else {
                 formContainer.style.display = 'none';
