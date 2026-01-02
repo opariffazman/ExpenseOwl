@@ -157,7 +157,16 @@
     "failed_delete_recurring": "Gagal memadam pengeluaran berulang",
     "failed_save_categories": "Gagal menyimpan kategori",
     "failed_save_currency": "Gagal menyimpan mata wang",
-    "failed_save_start_date": "Gagal menyimpan tarikh mula"
+    "failed_save_start_date": "Gagal menyimpan tarikh mula",
+    "category_renamed": "Kategori berjaya dinamakan semula",
+    "failed_rename_category": "Gagal menamakan semula kategori",
+    "error_renaming_category": "Ralat menamakan semula kategori",
+    "error_saving_categories": "Ralat menyimpan kategori",
+    "error_saving_currency": "Ralat menyimpan mata wang",
+    "error_saving_start_date": "Ralat menyimpan tarikh mula",
+    "error_saving_opening_balance": "Ralat menyimpan baki pembukaan",
+    "category_name_empty": "Nama kategori tidak boleh kosong",
+    "category_name_exists": "Nama kategori sudah wujud"
   },
   "recurring": {
     "interval": "Selang Masa",

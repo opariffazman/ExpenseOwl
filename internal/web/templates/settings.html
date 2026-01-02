@@ -265,9 +265,9 @@
                 renderCategories();
                 input.value = '';
             } else if (categories.includes(category)) {
-                showMessage('categoriesMessage', 'Category already exists', false);
+                showMessage('categoriesMessage', t('settings.category_exists', 'Category already exists'), false);
             } else if (!category) {
-                showMessage('categoriesMessage', 'Category name cannot be empty.', false);
+                showMessage('categoriesMessage', t('settings.category_empty', 'Category name cannot be empty.'), false);
             }
         }
 
@@ -320,7 +320,7 @@
             const oldName = categories[index];
 
             if (!newName) {
-                showMessage('categoriesMessage', 'Category name cannot be empty', false);
+                showMessage('categoriesMessage', t('settings.category_name_empty', 'Category name cannot be empty'), false);
                 return;
             }
 
@@ -330,7 +330,7 @@
             }
 
             if (categories.includes(newName)) {
-                showMessage('categoriesMessage', 'Category name already exists', false);
+                showMessage('categoriesMessage', t('settings.category_name_exists', 'Category name already exists'), false);
                 return;
             }
 
@@ -344,20 +344,20 @@
                 if (response.ok) {
                     categories[index] = newName;
                     renderCategories();
-                    showMessage('categoriesMessage', 'Category renamed successfully', true);
+                    showMessage('categoriesMessage', t('settings.category_renamed', 'Category renamed successfully'), true);
                 } else {
                     const error = await response.json();
-                    showMessage('categoriesMessage', `Failed to rename category: ${error.error}`, false);
+                    showMessage('categoriesMessage', `${t('settings.failed_rename_category', 'Failed to rename category')}: ${error.error}`, false);
                 }
             } catch (error) {
                 console.error('Error renaming category:', error);
-                showMessage('categoriesMessage', 'Error renaming category', false);
+                showMessage('categoriesMessage', t('settings.error_renaming_category', 'Error renaming category'), false);
             }
         }
 
         async function saveCategories() {
             if (categories.length === 0) {
-                showMessage('categoriesMessage', 'At least one category is required', false);
+                showMessage('categoriesMessage', t('settings.category_required', 'At least one category is required'), false);
                 return;
             }
             try {
@@ -365,16 +365,16 @@
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(categories)
-                });   
+                });
                 if (response.ok) {
-                    showMessage('categoriesMessage', 'Categories saved successfully', true);
+                    showMessage('categoriesMessage', t('settings.categories_saved', 'Categories saved successfully'), true);
                 } else {
                     const error = await response.json();
-                    showMessage('categoriesMessage', `Failed to save categories: ${error.error}`, false);
+                    showMessage('categoriesMessage', `${t('settings.failed_save_categories', 'Failed to save categories')}: ${error.error}`, false);
                 }
             } catch (error) {
                 console.error('Error saving categories:', error);
-                showMessage('categoriesMessage', 'Error saving categories', false);
+                showMessage('categoriesMessage', t('settings.error_saving_categories', 'Error saving categories'), false);
             }
         }
 
@@ -397,14 +397,14 @@
                     body: JSON.stringify(currencyCode)
                 });
                 if (response.ok) {
-                    showMessage('currencyMessage', 'Currency saved successfully', true);
+                    showMessage('currencyMessage', t('settings.currency_saved', 'Currency saved successfully'), true);
                     currentCurrency = currencyCode;
                 } else {
-                    showMessage('currencyMessage', 'Failed to save currency', false);
+                    showMessage('currencyMessage', t('settings.failed_save_currency', 'Failed to save currency'), false);
                 }
             } catch (error) {
                 console.error('Error saving currency:', error);
-                showMessage('currencyMessage', 'Error saving currency', false);
+                showMessage('currencyMessage', t('settings.error_saving_currency', 'Error saving currency'), false);
             }
         }
 
@@ -420,10 +420,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(parseInt(startDateValue, 10))
                 });
-                showMessage('startDateMessage', response.ok ? 'Start date saved successfully' : 'Failed to save start date', response.ok);
+                showMessage('startDateMessage', response.ok ? t('settings.start_date_saved', 'Start date saved successfully') : t('settings.failed_save_start_date', 'Failed to save start date'), response.ok);
             } catch (error) {
                 console.error('Error saving start date:', error);
-                showMessage('startDateMessage', 'Error saving start date', false);
+                showMessage('startDateMessage', t('settings.error_saving_start_date', 'Error saving start date'), false);
             }
         }
 
@@ -435,10 +435,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(balance)
                 });
-                showMessage('openingBalanceMessage', response.ok ? 'Opening balance saved successfully' : 'Failed to save opening balance', response.ok);
+                showMessage('openingBalanceMessage', response.ok ? t('settings.opening_balance_saved', 'Opening balance saved successfully') : t('settings.failed_save_opening_balance', 'Failed to save opening balance'), response.ok);
             } catch (error) {
                 console.error('Error saving opening balance:', error);
-                showMessage('openingBalanceMessage', 'Error saving opening balance', false);
+                showMessage('openingBalanceMessage', t('settings.error_saving_opening_balance', 'Error saving opening balance'), false);
             }
         }
 
@@ -563,7 +563,7 @@
 
             } catch (error) {
                 console.error('Failed to initialize settings:', error);
-                showMessage('categoriesMessage', 'Failed to load settings', false);
+                showMessage('categoriesMessage', t('messages.failed_settings', 'Failed to load settings'), false);
             }
         }
         
