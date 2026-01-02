@@ -334,7 +334,7 @@
                 const config = await configResponse.json();
                 const categorySelect = document.getElementById('category');
                 categorySelect.innerHTML = `<option value="" disabled selected data-i18n="common.please_select">Please select</option>` +
-                    config.categories.map(cat =>
+                    config.categories.sort().map(cat =>
                         `<option value="${cat}">${cat}</option>`
                     ).join('');
 
@@ -343,7 +343,7 @@
                 reportCategorySelect.innerHTML =
                     `<option value="" disabled selected data-i18n="common.please_select">Please select</option>` +
                     `<option value="__ALL__" data-i18n="report.all_categories">All Categories</option>` +
-                    config.categories.map(cat =>
+                    config.categories.sort().map(cat =>
                         `<option value="${cat}">${cat}</option>`
                     ).join('');
 

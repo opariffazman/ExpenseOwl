@@ -360,7 +360,7 @@
                 const config = await configResponse.json();
                 const categorySelect = document.getElementById('category');
                 categorySelect.innerHTML = `<option value="" disabled selected data-i18n="common.please_select">Please select</option>` +
-                    config.categories.map(cat =>
+                    config.categories.sort().map(cat =>
                         `<option value="${cat}">${cat}</option>`
                     ).join('');
                 applyTranslations(); // Apply translations to dynamically added options
