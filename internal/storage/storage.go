@@ -26,6 +26,10 @@ type Storage interface {
 	UpdateLanguage(language string) error
 	GetOpeningBalance() (float64, error)
 	UpdateOpeningBalance(balance float64) error
+	GetUseManualBalances() (bool, error)
+	UpdateUseManualBalances(use bool) error
+	GetManualBalances() (map[string]float64, error)
+	UpdateManualBalances(balances map[string]float64) error
 
 	// Recurring Expenses
 	GetRecurringExpenses() ([]RecurringExpense, error)
@@ -58,6 +62,8 @@ type Config struct {
 	VoucherCounter    int                `json:"voucherCounter"`    // Counter for BAU (Baucar/voucher) IDs
 	ReceiptCounter    int                `json:"receiptCounter"`    // Counter for RES (Resit/receipt) IDs
 	OpeningBalance    float64            `json:"openingBalance"`    // Opening balance for statement generation
+	UseManualBalances bool               `json:"useManualBalances"` // Toggle for manual category balances feature
+	ManualBalances    map[string]float64 `json:"manualBalances"`    // Manual final balances per category
 	// Tags              []string           `json:"tags"`
 }
 

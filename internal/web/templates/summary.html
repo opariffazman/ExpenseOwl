@@ -103,6 +103,9 @@
             <label for="showLatestToggle">
                 <input type="checkbox" id="showLatestToggle" class="styled-checkbox"> <span data-i18n="summary.show_latest">Show Latest Summary</span>
             </label>
+            <label for="useManualBalancesToggle" style="margin-left: 15px;">
+                <input type="checkbox" id="useManualBalancesToggle" class="styled-checkbox"> <span data-i18n="summary.use_manual_balances">Use Manual Balances</span>
+            </label>
             <button id="generateStatementBtn" class="nav-button" style="margin-left: auto;">
                 <i class="fa-solid fa-file-pdf"></i> <span data-i18n="summary.generate_statement">Generate Statement</span>
             </button>
@@ -122,6 +125,8 @@
         let startDate = 1;
         let sortColumn = 'balance';
         let sortAscending = false;
+        let useManualBalances = false;
+        let manualBalances = {};
 
         function calculateCategorySummary(expenses) {
             const categoryMap = new Map();
@@ -188,6 +193,7 @@
             }
 
             const sortedData = sortTableData(data, sortColumn, sortAscending);
+            const showManualColumn = useManualBalances;
 
             return `
                 <table class="expense-table">
@@ -197,17 +203,25 @@
                             <th onclick="handleSort('gains')" class="amount ${sortColumn === 'gains' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.gains', 'Gains')}</th>
                             <th onclick="handleSort('expenses')" class="amount ${sortColumn === 'expenses' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.expenses', 'Expenses')}</th>
                             <th onclick="handleSort('balance')" class="amount ${sortColumn === 'balance' ? (sortAscending ? 'sorted-asc' : 'sorted-desc') : ''}">${t('summary.balance', 'Balance')}</th>
+                            ${showManualColumn ? `<th class="amount">${t('summary.manual_balance', 'Manual Balance')}</th>` : ''}
+                            ${showManualColumn ? `<th class="amount">${t('summary.final_balance', 'Final Balance')}</th>` : ''}
                         </tr>
                     </thead>
                     <tbody>
-                        ${sortedData.map(row => `
-                            <tr>
-                                <td>${escapeHTML(row.category)}</td>
-                                <td class="amount">${row.gains > 0 ? formatCurrency(row.gains) : '-'}</td>
-                                <td class="amount">${row.expenses > 0 ? formatCurrency(row.expenses) : '-'}</td>
-                                <td class="amount" style="color: ${row.balance >= 0 ? '#28a745' : '#dc3545'}; font-weight: bold;">${formatCurrency(row.balance)}</td>
-                            </tr>
-                        `).join('')}
+                        ${sortedData.map(row => {
+                            const manualBalance = manualBalances[row.category] || 0;
+                            const finalBalance = row.balance + manualBalance;
+                            return `
+                                <tr>
+                                    <td>${escapeHTML(row.category)}</td>
+                                    <td class="amount">${row.gains > 0 ? formatCurrency(row.gains) : '-'}</td>
+                                    <td class="amount">${row.expenses > 0 ? formatCurrency(row.expenses) : '-'}</td>
+                                    <td class="amount" style="color: ${row.balance >= 0 ? '#28a745' : '#dc3545'}; font-weight: bold;">${formatCurrency(row.balance)}</td>
+                                    ${showManualColumn ? `<td class="amount"><input type="number" step="0.01" value="${manualBalance}" onchange="updateManualBalance('${row.category}', this.value)" style="width: 100px; text-align: right;"></td>` : ''}
+                                    ${showManualColumn ? `<td class="amount" style="color: ${finalBalance >= 0 ? '#28a745' : '#dc3545'}; font-weight: bold;">${formatCurrency(finalBalance)}</td>` : ''}
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                     <tfoot>
                         <tr style="font-weight: bold;">
@@ -215,10 +229,31 @@
                             <td class="amount">${formatCurrency(summary.totalGains)}</td>
                             <td class="amount">${formatCurrency(summary.totalExpenses)}</td>
                             <td class="amount" style="color: ${summary.netBalance >= 0 ? '#28a745' : '#dc3545'};">${formatCurrency(summary.netBalance)}</td>
+                            ${showManualColumn ? `<td class="amount">${formatCurrency(Object.values(manualBalances).reduce((sum, val) => sum + val, 0))}</td>` : ''}
+                            ${showManualColumn ? `<td class="amount" style="color: ${(summary.netBalance + Object.values(manualBalances).reduce((sum, val) => sum + val, 0)) >= 0 ? '#28a745' : '#dc3545'};">${formatCurrency(summary.netBalance + Object.values(manualBalances).reduce((sum, val) => sum + val, 0))}</td>` : ''}
                         </tr>
                     </tfoot>
                 </table>
             `;
+        }
+
+        async function updateManualBalance(category, value) {
+            const numValue = parseFloat(value) || 0;
+            manualBalances[category] = numValue;
+
+            try {
+                const response = await fetch('/manualbalances/edit', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(manualBalances)
+                });
+
+                if (!response.ok) throw new Error('Failed to save manual balances');
+                updateSummary();
+            } catch (error) {
+                console.error('Error saving manual balance:', error);
+                alert('Failed to save manual balance. Please try again.');
+            }
         }
 
         function handleSort(column) {
@@ -271,6 +306,10 @@
                 const config = await configResponse.json();
                 currentCurrency = config.currency;
                 startDate = config.startDate;
+                useManualBalances = config.useManualBalances || false;
+                manualBalances = config.manualBalances || {};
+
+                document.getElementById('useManualBalancesToggle').checked = useManualBalances;
 
                 const response = await fetch('/expenses');
                 if (!response.ok) throw new Error('Failed to fetch data');
@@ -289,6 +328,25 @@
         document.getElementById('showLatestToggle').addEventListener('change', () => {
             updateMonthDisplayCustom();
             updateSummary();
+        });
+
+        document.getElementById('useManualBalancesToggle').addEventListener('change', async (e) => {
+            useManualBalances = e.target.checked;
+
+            try {
+                const response = await fetch('/usemanualbalances/edit', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(useManualBalances)
+                });
+
+                if (!response.ok) throw new Error('Failed to update use manual balances setting');
+                updateSummary();
+            } catch (error) {
+                console.error('Error updating manual balances setting:', error);
+                alert('Failed to update setting. Please try again.');
+                e.target.checked = !useManualBalances;
+            }
         });
 
         document.getElementById('prevMonth').addEventListener('click', () => {

@@ -59,7 +59,9 @@ const (
 		start_date INTEGER NOT NULL,
 		voucher_counter INTEGER DEFAULT 0,
 		receipt_counter INTEGER DEFAULT 0,
-		opening_balance DECIMAL(15,2) DEFAULT 0
+		opening_balance DECIMAL(15,2) DEFAULT 0,
+		use_manual_balances BOOLEAN DEFAULT false,
+		manual_balances JSONB DEFAULT '{}'::jsonb
 	);`
 )
 
@@ -90,6 +92,18 @@ func createTables(db *sql.DB) error {
 			return err
 		}
 	}
+
+	// Migration: Add new columns if they don't exist
+	migrations := []string{
+		`ALTER TABLE config ADD COLUMN IF NOT EXISTS use_manual_balances BOOLEAN DEFAULT false`,
+		`ALTER TABLE config ADD COLUMN IF NOT EXISTS manual_balances JSONB DEFAULT '{}'::jsonb`,
+	}
+	for _, migration := range migrations {
+		if _, err := db.Exec(migration); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -128,11 +142,12 @@ func (s *databaseStore) updateConfig(updater func(c *Config) error) error {
 }
 
 func (s *databaseStore) GetConfig() (*Config, error) {
-	query := `SELECT categories, currency, start_date, COALESCE(voucher_counter, 0), COALESCE(receipt_counter, 0), COALESCE(opening_balance, 0) FROM config WHERE id = 'default'`
-	var categoriesStr, currency string
+	query := `SELECT categories, currency, start_date, COALESCE(voucher_counter, 0), COALESCE(receipt_counter, 0), COALESCE(opening_balance, 0), COALESCE(use_manual_balances, false), COALESCE(manual_balances, '{}'::jsonb) FROM config WHERE id = 'default'`
+	var categoriesStr, currency, manualBalancesStr string
 	var startDate, voucherCounter, receiptCounter int
 	var openingBalance float64
-	err := s.db.QueryRow(query).Scan(&categoriesStr, &currency, &startDate, &voucherCounter, &receiptCounter, &openingBalance)
+	var useManualBalances bool
+	err := s.db.QueryRow(query).Scan(&categoriesStr, &currency, &startDate, &voucherCounter, &receiptCounter, &openingBalance, &useManualBalances, &manualBalancesStr)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -152,8 +167,12 @@ func (s *databaseStore) GetConfig() (*Config, error) {
 	config.VoucherCounter = voucherCounter
 	config.ReceiptCounter = receiptCounter
 	config.OpeningBalance = openingBalance
+	config.UseManualBalances = useManualBalances
 	if err := json.Unmarshal([]byte(categoriesStr), &config.Categories); err != nil {
 		return nil, fmt.Errorf("failed to parse categories from db: %v", err)
+	}
+	if err := json.Unmarshal([]byte(manualBalancesStr), &config.ManualBalances); err != nil {
+		return nil, fmt.Errorf("failed to parse manual balances from db: %v", err)
 	}
 
 	recurring, err := s.GetRecurringExpenses()
@@ -248,6 +267,41 @@ func (s *databaseStore) GetOpeningBalance() (float64, error) {
 func (s *databaseStore) UpdateOpeningBalance(balance float64) error {
 	query := `UPDATE config SET opening_balance = $1 WHERE id = 'default'`
 	_, err := s.db.Exec(query, balance)
+	return err
+}
+
+func (s *databaseStore) GetUseManualBalances() (bool, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return false, err
+	}
+	return config.UseManualBalances, nil
+}
+
+func (s *databaseStore) UpdateUseManualBalances(use bool) error {
+	query := `UPDATE config SET use_manual_balances = $1 WHERE id = 'default'`
+	_, err := s.db.Exec(query, use)
+	return err
+}
+
+func (s *databaseStore) GetManualBalances() (map[string]float64, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	if config.ManualBalances == nil {
+		return make(map[string]float64), nil
+	}
+	return config.ManualBalances, nil
+}
+
+func (s *databaseStore) UpdateManualBalances(balances map[string]float64) error {
+	balancesJSON, err := json.Marshal(balances)
+	if err != nil {
+		return fmt.Errorf("failed to marshal manual balances: %v", err)
+	}
+	query := `UPDATE config SET manual_balances = $1 WHERE id = 'default'`
+	_, err = s.db.Exec(query, balancesJSON)
 	return err
 }
 

@@ -302,6 +302,70 @@ func (h *Handler) UpdateOpeningBalance(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
+func (h *Handler) GetUseManualBalances(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	useManualBalances, err := h.storage.GetUseManualBalances()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to get use manual balances"})
+		log.Printf("API ERROR: Failed to get use manual balances: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, useManualBalances)
+}
+
+func (h *Handler) UpdateUseManualBalances(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	var use bool
+	if err := json.NewDecoder(r.Body).Decode(&use); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+	if err := h.storage.UpdateUseManualBalances(use); err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to update use manual balances"})
+		log.Printf("API ERROR: Failed to update use manual balances: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
+func (h *Handler) GetManualBalances(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	balances, err := h.storage.GetManualBalances()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to get manual balances"})
+		log.Printf("API ERROR: Failed to get manual balances: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, balances)
+}
+
+func (h *Handler) UpdateManualBalances(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+	var balances map[string]float64
+	if err := json.NewDecoder(r.Body).Decode(&balances); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+	if err := h.storage.UpdateManualBalances(balances); err != nil {
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to update manual balances"})
+		log.Printf("API ERROR: Failed to update manual balances: %v\n", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
 func (h *Handler) GetLanguage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Method not allowed"})

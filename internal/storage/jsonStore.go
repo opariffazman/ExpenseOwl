@@ -242,6 +242,47 @@ func (s *jsonStore) UpdateOpeningBalance(balance float64) error {
 	return s.writeConfigFile(s.configPath, data)
 }
 
+func (s *jsonStore) GetUseManualBalances() (bool, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return false, err
+	}
+	return config.UseManualBalances, nil
+}
+
+func (s *jsonStore) UpdateUseManualBalances(use bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	data, err := s.readConfigFile(s.configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %v", err)
+	}
+	data.UseManualBalances = use
+	return s.writeConfigFile(s.configPath, data)
+}
+
+func (s *jsonStore) GetManualBalances() (map[string]float64, error) {
+	config, err := s.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	if config.ManualBalances == nil {
+		return make(map[string]float64), nil
+	}
+	return config.ManualBalances, nil
+}
+
+func (s *jsonStore) UpdateManualBalances(balances map[string]float64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	data, err := s.readConfigFile(s.configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %v", err)
+	}
+	data.ManualBalances = balances
+	return s.writeConfigFile(s.configPath, data)
+}
+
 func (s *jsonStore) GetRecurringExpenses() ([]RecurringExpense, error) {
 	config, err := s.GetConfig()
 	if err != nil {

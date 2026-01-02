@@ -73,6 +73,10 @@ func runServer(port int) {
 	http.HandleFunc("/language/edit", handler.UpdateLanguage)
 	http.HandleFunc("/openingbalance", handler.GetOpeningBalance)
 	http.HandleFunc("/openingbalance/edit", handler.UpdateOpeningBalance)
+	http.HandleFunc("/usemanualbalances", handler.GetUseManualBalances)
+	http.HandleFunc("/usemanualbalances/edit", handler.UpdateUseManualBalances)
+	http.HandleFunc("/manualbalances", handler.GetManualBalances)
+	http.HandleFunc("/manualbalances/edit", handler.UpdateManualBalances)
 	// http.HandleFunc("/tags", handler.GetTags)
 	// http.HandleFunc("/tags/edit", handler.UpdateTags)
 

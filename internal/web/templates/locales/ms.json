@@ -113,7 +113,10 @@
     "no_data": "Tiada data direkodkan untuk bulan ini",
     "show_latest": "Tunjuk Ringkasan Terkini",
     "latest_summary": "Ringkasan Terkini",
-    "generate_statement": "Jana Penyata"
+    "generate_statement": "Jana Penyata",
+    "use_manual_balances": "Gunakan Baki Manual",
+    "manual_balance": "Baki Manual",
+    "final_balance": "Baki Akhir"
   },
   "settings": {
     "title": "Tetapan",
