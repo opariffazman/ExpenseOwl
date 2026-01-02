@@ -38,6 +38,19 @@ docker run --rm -d -p 8080:8080 -v expenseowl:/app/data expenseowl
 
 This project does not currently have automated tests.
 
+### Development Workflow
+
+**IMPORTANT**: After making code changes (especially to frontend files), always rebuild and run the server so the user can test changes in the browser immediately:
+
+```bash
+./run-server.sh
+```
+
+This is critical because:
+- Frontend assets are embedded at compile time via `//go:embed`
+- Changes to HTML/CSS/JS files won't be visible until the binary is rebuilt
+- The user expects to test changes immediately in their browser
+
 ## Architecture
 
 ### Storage Interface Pattern
